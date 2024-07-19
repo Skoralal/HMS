@@ -1,0 +1,17 @@
+﻿@page "/Invites"
+
+@using Microsoft.AspNetCore.Authorization
+
+@attribute [Authorize]
+@rendermode InteractiveServer
+
+<PageTitle>Invites</PageTitle>
+
+<h1>Invites</h1>
+
+<AuthorizeView>
+    Hello @context.User.Identity?.Name!
+</AuthorizeView>
+@code {
+
+}

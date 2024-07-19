@@ -1,0 +1,164 @@
+﻿@page "/MyHouseHold"
+@inject IHHService HHService
+@inject IMemberService MemberService
+@inject IGoodService GoodService
+@inject IDishService DishService
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject NavigationManager navigationManager
+
+
+@attribute [Authorize]
+@rendermode InteractiveServer
+
+<PageTitle>MyHouseHold</PageTitle>
+
+<h1>MyHouseHold</h1>
+
+<AuthorizeView>
+    Hello @context.User.Identity?.Name!
+</AuthorizeView>
+@if (newHouseHold == null && HHFound)
+{
+    <span>Loading</span>
+}
+else if (HHFound)
+{
+    <span>@newHouseHold.Login</span>
+}
+else if (!HHFound)
+{
+    <EditForm Model="NewHouseHold" OnValidSubmit="HandleNewHH">
+        <label>House Hold Login</label>
+        <InputText @bind-Value="@NewHouseHold.Login">@NewHouseHold.Login</InputText>
+        <br />
+
+        <button type="submit">Submit</button>
+    </EditForm>
+}
+<br />
+@if(newHouseHold != null)
+{
+    <span>@newHouseHold.Login</span>
+}
+else
+{
+    <span>null</span>
+}
+<br />
+@UserName
+<br />
+@error
+<br />
+@hhLogin
+<br />
+@if(houseHold != null && houseHold.AllGoods != null)
+{
+    <ul>
+        @foreach(var good in houseHold.AllGoods)
+        {
+            <li>@good.Name - @good.Stock</li>
+        }
+    </ul>
+}
+
+@code {
+    // List<DBGood> goods = null;
+    public string error = "";
+    private string UserName;
+    public DBHouseHold newHouseHold = null;
+    bool HHFound = true;
+    string hhLogin = "aboba1";
+    public HouseHold houseHold = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        if (user.Identity.IsAuthenticated)
+        {
+            UserName = user.Identity.Name;
+        }
+        try
+        {
+            hhLogin = await MemberService.GetParentHH(UserName);
+            newHouseHold = await HHService.GetHHByID(hhLogin);
+            // goods = await GoodService.GetHHGoods(hhLogin);
+            if (newHouseHold == null)
+            {
+                HHFound = false;
+            }
+            else
+            {
+
+            }
+        }
+        catch
+        {
+            HHFound = false;
+        }
+        assembleHouseHold();
+
+    }
+    DBHouseHold NewHouseHold = new DBHouseHold();
+    DBMember InitialMember = new();
+    public async void HandleNewHH()
+    {
+        try
+        {
+            InitialMember.HouseHoldLogin = NewHouseHold.Login;
+            InitialMember.MemberLogin = UserName;
+            await HHService.CreateHH(NewHouseHold);
+            await MemberService.InitialMember(InitialMember);
+            newHouseHold = null;
+            Task.Delay(1000);
+            newHouseHold = await HHService.GetHHByID(UserName);
+            HHFound = true;
+            navigationManager.NavigateTo(navigationManager.Uri, forceLoad: true);
+        }
+        catch
+        {
+            error = "aboba";
+        }
+
+        // await 
+    }
+    public async void assembleHouseHold()
+    {
+        houseHold.Login = NewHouseHold.Login;
+        var goods = await GoodService.GetHHGoods(hhLogin);
+        foreach (var good in goods)
+        {
+            Good converted = new();
+            converted.Name = good.Name;
+            if (good.Ingredients != null)
+            {
+                foreach (var couple in good.Ingredients.Split(','))
+                {
+                    var couple2 = couple.Split(':');
+                    converted.Ingredients.Add(new Good(couple2[0], Convert.ToDouble(couple2[1])));
+                }
+            }
+            converted.Stock = good.Stock;
+            converted.PassiveConsumption = good.PassiveConsumptionRate;
+            houseHold.AllGoods.Add(converted);
+        }
+        var dishes = await DishService.GetAllHHDishes(hhLogin);
+        foreach (var dish in dishes)
+        {
+            Dish converted = new();
+            converted.Cooked = dish.Cooked;
+            converted.Consumed = dish.Consumed;
+            converted.Owner = dish.MemberOwner;
+            converted.Amount = dish.Amount;
+            converted.Time = dish.Time;
+            foreach (var couple in dish.Good.Split(','))
+            {
+                var couple2 = couple.Split(':');
+                converted.Contents.Add(new Good(couple2[0], Convert.ToDouble(couple2[1])));
+            }
+            houseHold.AllDishes.Add(converted);
+        }
+        //
+    }
+}

@@ -1,0 +1,104 @@
+﻿@page "/NewGood"
+@inject IGoodService GoodService
+@inject IMemberService MemberService
+@inject IHHService HHService
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+@attribute [Authorize]
+@rendermode InteractiveServer
+
+<h3>NewGood</h3>
+
+<EditForm Model="newGood" OnValidSubmit="HandleNewGood">
+    <label>Name</label>
+    <InputText @bind-Value="@newGood.Name">@newGood.Name</InputText>
+    <br />
+    @if(newGood.Ingredients != null)
+    {
+        @foreach (var ingedient in newGood.Ingredients)
+        {
+            <label>@ingedient.Name - @ingedient.Stock</label>
+            <br />
+        }
+    }
+    <input @bind-value="@ingName" list="list" type="text" placeholder="Select good"/>
+    <datalist id="list">
+        @foreach(var ing in allIngs)
+        {
+            <option value="@ing">@ing</option>
+        }
+    </datalist>
+    <InputNumber @bind-Value="@ingStock">@ingStock</InputNumber>
+    <button type="button" class="btn-primary" onclick="@AddNewIngredient">Add ingredient</button>
+    <br />
+    <label>Stock</label>
+    <br />
+    <InputNumber @bind-Value="@newGood.Stock">@newGood.Stock</InputNumber>
+    <br />
+    <label>Passive consumption</label>
+    <br />
+    <InputNumber @bind-Value="@newGood.PassiveConsumption">@newGood.PassiveConsumption</InputNumber>
+    <br />
+    <label>Icon</label>
+    <br />
+    <InputText @bind-Value="@newGood.Icon">@newGood.Icon</InputText>
+    <br />
+    
+
+
+
+    <button type="submit">Submit</button>
+</EditForm>
+
+@code {
+    private string UserName;
+    public Good newGood = new();
+    public Good Ingredient = new();
+    public string ingName;
+    public double ingStock;
+    public List<string> allIngs = new();
+    string HHLogin;
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+        if (user.Identity.IsAuthenticated)
+        {
+            UserName = user.Identity.Name;
+        }
+        HHLogin = await MemberService.GetParentHH(UserName);
+        GetAllGoodsForIngs();
+        newGood.Stock = 0;
+        newGood.PassiveConsumption = 0;
+    }
+    public async void GetAllGoodsForIngs()
+    {
+        foreach(DBGood dBGood in await GoodService.GetHHGoods(HHLogin))
+        {
+            allIngs.Add(dBGood.Name);
+        }
+    }
+
+    public async void HandleNewGood()
+    {
+        await GoodService.AddHMSGood(newGood, HHLogin);
+        newGood = new();
+        newGood.Name = "";
+        newGood.Stock = 0;
+        newGood.PassiveConsumption = 0;
+        allIngs.Clear();
+    }
+    public async void AddNewIngredient()
+    {
+        if(newGood.Ingredients == null)
+        {
+            newGood.Ingredients = new();
+        }
+        Ingredient.Name = ingName;
+        Ingredient.Stock = ingStock;
+        newGood.Ingredients.Add(Ingredient);
+        Ingredient = new();
+        ingName = null;
+        ingStock = 0;
+    }
+}

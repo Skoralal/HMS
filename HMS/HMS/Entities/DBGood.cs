@@ -21,5 +21,6 @@ namespace HMS.Entities
             this.Icon = icon;
             OwnerHH = ownerHH;
         }
+        public DBGood() { }
     }
 }

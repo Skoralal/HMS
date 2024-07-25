@@ -3,6 +3,7 @@
 @inject IMemberService MemberService
 @inject IGoodService GoodService
 @inject IDishService DishService
+@inject IInviteService InviteService
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject NavigationManager navigationManager
 
@@ -24,6 +25,16 @@
 else if (HHFound)
 {
     <span>@newHouseHold.Login</span>
+    <br />
+    <label>Invite new member</label>
+    <br />
+    <input @bind-value="@newInvite.Reciever" placeholder="enter reciever e-mail"/>
+    <button onclick="@SendInvite" class="btn-primary">Send</button>
+    <br />
+    @if (InviteSent)
+    {
+        <label>InviteSent</label>
+    }
 }
 else if (!HHFound)
 {
@@ -34,6 +45,11 @@ else if (!HHFound)
 
         <button type="submit">Submit</button>
     </EditForm>
+    @foreach(var invite in myInvites)
+    {
+        <label>@invite.SenderHH--------</label>
+        <button @onclick="() => JoinHH(invite.SenderHH)">Join @invite.SenderHH</button>
+    }
 }
 <br />
 @if(newHouseHold != null)
@@ -44,22 +60,17 @@ else
 {
     <span>null</span>
 }
-<br />
-@UserName
-<br />
-@error
-<br />
-@hhLogin
-<br />
 @if(houseHold != null && houseHold.AllGoods != null)
 {
     <ul>
         @foreach(var good in houseHold.AllGoods)
         {
             <li>@good.Name - @good.Stock</li>
+            <br />
         }
     </ul>
 }
+<button class="btn-primary" @onclick='() => navigationManager.NavigateTo("/NewGood")'>Add new good</button>
 
 @code {
     // List<DBGood> goods = null;
@@ -69,6 +80,9 @@ else
     bool HHFound = true;
     string hhLogin = "aboba1";
     public HouseHold houseHold = new();
+    public List<Invite> myInvites = new();
+    public Invite newInvite = new();
+    bool InviteSent = false;
 
     protected override async Task OnInitializedAsync()
     {
@@ -87,6 +101,7 @@ else
             if (newHouseHold == null)
             {
                 HHFound = false;
+                myInvites = await InviteService.GetMyInvites(UserName);
             }
             else
             {
@@ -123,6 +138,34 @@ else
 
         // await 
     }
+    public async Task<bool> JoinHH(string HHLogin)
+    {
+        DBMember dBMember = new();
+        dBMember.MemberLogin = UserName;
+        dBMember.HouseHoldLogin = HHLogin;
+        await MemberService.InitialMember(dBMember);
+        navigationManager.NavigateTo(navigationManager.Uri, forceLoad: true);
+        return true;
+    }
+    public async Task<bool> SendInvite()
+    {
+        try
+        {
+            newInvite.Id = hhLogin + newInvite.Reciever;
+            newInvite.SenderHH = hhLogin;
+            newInvite.Sender = UserName;
+            await InviteService.SendInvite(newInvite);
+            newInvite = new();
+            InviteSent = true;
+            return true;  
+        }
+        catch
+        {
+            InviteSent = false;
+            return false;
+        }
+
+    }
     public async void assembleHouseHold()
     {
         houseHold.Login = NewHouseHold.Login;
@@ -133,7 +176,8 @@ else
             converted.Name = good.Name;
             if (good.Ingredients != null)
             {
-                foreach (var couple in good.Ingredients.Split(','))
+                converted.Ingredients = new();
+                foreach (var couple in good.Ingredients[0..(good.Ingredients.Length-1)].Split(','))//Ing could END with "," - see GoodService
                 {
                     var couple2 = couple.Split(':');
                     converted.Ingredients.Add(new Good(couple2[0], Convert.ToDouble(couple2[1])));
@@ -159,6 +203,6 @@ else
             }
             houseHold.AllDishes.Add(converted);
         }
-        // Лёха Гей
+        // andrey slaaaave
     }
 }

@@ -1,0 +1,53 @@
+﻿@page "/DishFactory"
+@inject IHHService HHService
+@inject IMemberService MemberService
+@inject IGoodService GoodService
+@inject IDishService DishService
+@inject IInviteService InviteService
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject NavigationManager navigationManager
+
+
+@attribute [Authorize]
+@rendermode InteractiveServer
+
+<PageTitle>DishFactory</PageTitle>
+<h3>DishFactory</h3>
+<EditForm Model="newDBDish" OnInvalidSubmit="HandleNewDish">
+    <input @bind-value="newDBDish.Time" placeholder="Time"/>
+    <br />
+
+</EditForm>
+
+@code {
+    DBDish newDBDish = new();
+    List<string> allGoods = new();
+    string MemberLogin;
+    string HHLogin;
+    List<string> DishGoodsList;
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+        MemberLogin = user.Identity.Name;
+        HHLogin = await MemberService.GetParentHH(MemberLogin);
+        allGoods = await GoodService.GetHHGoodsNames(HHLogin);
+    }
+    public async void HandleNewDish()
+    {
+        string DishGoods = "";
+        foreach (var Good in DishGoodsList)
+        {
+            DishGoods += Good;
+            DishGoods += ",";
+        }
+        newDBDish.Good = DishGoods;
+        await DishService.AddNewDBDish(newDBDish);
+        newDBDish = new();
+        navigationManager.Refresh();
+    }
+    public void DeleteGood(string goodName)
+    {
+        allGoods.Remove(goodName);
+    }
+}

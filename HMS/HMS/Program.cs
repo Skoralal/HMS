@@ -28,6 +28,7 @@ namespace HMS
             builder.Services.AddScoped<IMemberService, MemberService>();
             builder.Services.AddScoped<IGoodService, GoodService>();
             builder.Services.AddScoped<IDishService, DishService>();
+            builder.Services.AddScoped<IInviteService, InviteService>();
 
             builder.Services.AddAuthentication(options =>
                 {

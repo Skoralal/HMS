@@ -11,6 +11,11 @@ namespace HMS.Services
             _context = context;
         }
 
+        public Task<DBMember> AddNewMember(DBMember dBMember)
+        {
+            throw new NotImplementedException();
+        }
+
         public async Task<List<DBMember>> GetAllHHMembers(string hhLogin)
         {
             return _context.DBMembers.Where(x => x.HouseHoldLogin == hhLogin).ToList();

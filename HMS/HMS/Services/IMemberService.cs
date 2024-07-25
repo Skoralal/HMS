@@ -8,5 +8,6 @@ namespace HMS.Services
         Task<DBMember> GetMemberByLogin(string loginToSearch);
         Task<List<DBMember>> GetAllHHMembers(string hhLogin);
         Task<string> GetParentHH(string loginToSearch);
+        Task<DBMember> AddNewMember(DBMember dBMember);
     }
 }

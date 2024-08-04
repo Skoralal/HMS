@@ -6,7 +6,7 @@
 @inject IInviteService InviteService
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject NavigationManager navigationManager
-
+@inject DataService DataService
 
 @attribute [Authorize]
 @rendermode InteractiveServer
@@ -14,14 +14,66 @@
 <PageTitle>DishControl</PageTitle>
 <h3>DishControl</h3>
 <button onclick="@GoToCreateNewDish">Add new</button>
+<br />
+<button onclick="@GoToMapDish">Map</button>
 
+<h1>@date</h1>
+<h1>@date.ToShortDateString()</h1>
+<InputDate @onchange="UpdateDate" @bind-Value="@date"></InputDate>
+@foreach(var dish in datesDishes)
+{
+    <div @onclick="() => SetDataAndNavigate(dish)" style="cursor:pointer">
+        <label>@dish.Time[11..16]</label>
+        <br />
+        <label>@dish.Good</label>
+        <br />
+        <label>@dish.MemberOwner</label>
+    </div>
+    <br />
+}
 @code {
+    private DateTime _date;
+    public DateTime date
+    {
+        get => _date;
+        set
+        {
+            _date = value;
+            UpdateDate();
+        }
+    }
+    List<DBDish> datesDishes = new();
+    string MemberLogin = "";
+    string HHLogin = "";
     protected override async Task OnInitializedAsync()
     {
+        date = DateTime.Today;
         base.OnInitialized();
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+        if (user.Identity.IsAuthenticated)
+        {
+            MemberLogin = user.Identity.Name;
+        }
+        HHLogin = await MemberService.GetParentHH(MemberLogin);
+        datesDishes = await DishService.GetDateHHDishes(HHLogin, date.ToShortDateString());
+        datesDishes.OrderBy(x => x.Time);
     }
     private void GoToCreateNewDish()
     {
         navigationManager.NavigateTo("/DishFactory");
+    }
+    private void GoToMapDish()
+    {
+        navigationManager.NavigateTo("/MapDish");
+    }
+    private async void UpdateDate()
+    {
+        datesDishes = await DishService.GetDateHHDishes(HHLogin, date.ToShortDateString());
+    }
+    private void SetDataAndNavigate(DBDish dish)
+    {
+        DataService.SharedDish = dish;
+        navigationManager.NavigateTo("/DishSpace");
     }
 }

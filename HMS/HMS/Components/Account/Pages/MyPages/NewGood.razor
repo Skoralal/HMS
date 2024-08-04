@@ -3,33 +3,54 @@
 @inject IMemberService MemberService
 @inject IHHService HHService
 @inject AuthenticationStateProvider AuthenticationStateProvider
+@inject NavigationManager navigationManager
 
 @attribute [Authorize]
 @rendermode InteractiveServer
 
 <h3>NewGood</h3>
-
+<h1>@shops.Count</h1>
+<h1>@newGood.Recipe</h1>
 <EditForm Model="newGood" OnValidSubmit="HandleNewGood">
     <label>Name</label>
     <InputText @bind-Value="@newGood.Name">@newGood.Name</InputText>
     <br />
-    @if(newGood.Ingredients != null)
+    @if (GoodIngs != null)
     {
-        @foreach (var ingedient in newGood.Ingredients)
+        <label>Is bought</label>
+        <InputCheckbox @bind-Value="isBought">Is bought</InputCheckbox>
+        @foreach (int index in mappedGoodIngs)
         {
-            <label>@ingedient.Name - @ingedient.Stock</label>
-            <br />
+            <div hidden="@(GoodIngs[index].Stock < 0)" style="color: red">
+                <label>@(isBought ? (shops.Contains(GoodIngs[index].Name) || GoodIngs[index].Name == "" ? "" : "error") : (allIngs.Contains(GoodIngs[index].Name) || GoodIngs[index].Name == "" ? "" : "error"))</label>
+                <input @bind-value="@GoodIngs[index].Name" list="@(isBought ? "shops" : "list")" />
+                <InputNumber @bind-Value="GoodIngs[index].Stock" />
+                <button type="button" @onclick="() => GoodIngs[index].Stock = -1">delete</button>
+                <br />
+            </div>
         }
     }
-    <input @bind-value="@ingName" list="list" type="text" placeholder="Select good"/>
+    <label>Ingredients</label>
+    <br />
+    
+    <br />
     <datalist id="list">
         @foreach(var ing in allIngs)
         {
             <option value="@ing">@ing</option>
         }
     </datalist>
-    <InputNumber @bind-Value="@ingStock">@ingStock</InputNumber>
-    <button type="button" class="btn-primary" onclick="@AddNewIngredient">Add ingredient</button>
+    <datalist id="shops">
+        @foreach(var shop in shops)
+        {
+            <option value="@shop">@shop</option>
+        }
+    </datalist>
+    <button type="button" class="btn-primary" onclick="@AddIng">Add ingredient</button>
+    <br />
+    <label>Recipe</label>
+    <br />
+    <textarea @bind="@newGood.Recipe" placeholder="Recipe" style="height: 360px; width: 640px">@newGood.Recipe</textarea>
     <br />
     <label>Stock</label>
     <br />
@@ -49,8 +70,14 @@
 
     <button type="submit">Submit</button>
 </EditForm>
+<h1>@Debuh</h1>
+@foreach(var aboba in GoodIngs)
+{
+    <h3>@aboba.Name</h3>
+}
 
 @code {
+    double Debuh = 1;
     private string UserName;
     public Good newGood = new();
     public Good Ingredient = new();
@@ -58,6 +85,10 @@
     public double ingStock;
     public List<string> allIngs = new();
     string HHLogin;
+    bool isBought = false;
+    List<string> shops = new();
+    List<Good> GoodIngs = [new Good() { Stock = 0, Name = "" }];
+    public List<int> mappedGoodIngs = [0];
     protected override async Task OnInitializedAsync()
     {
         var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
@@ -70,6 +101,7 @@
         GetAllGoodsForIngs();
         newGood.Stock = 0;
         newGood.PassiveConsumption = 0;
+        shops = await HHService.GetHHShops(HHLogin);
     }
     public async void GetAllGoodsForIngs()
     {
@@ -81,12 +113,43 @@
 
     public async void HandleNewGood()
     {
-        await GoodService.AddHMSGood(newGood, HHLogin);
+        newGood.Ingredients = new();
+        foreach (var ing in GoodIngs)
+        {
+            if ((ing.Stock > 0) || (isBought && ing.Stock >=0))
+            {
+                newGood.Ingredients.Add(ing);
+            }
+        }
+        if (isBought)
+        {
+            foreach (var shop in newGood.Ingredients)
+            {
+                if (!shops.Contains(shop.Name))
+                {
+                    return;
+                }
+            }
+            await GoodService.AddHMSBoughtGood(newGood, HHLogin);
+        }
+        else
+        {
+            foreach (var ing in newGood.Ingredients)
+            {
+                if (!allIngs.Contains(ing.Name))
+                {
+                    return;
+                }
+            }
+            await GoodService.AddHMSGood(newGood, HHLogin);
+        }
         newGood = new();
         newGood.Name = "";
         newGood.Stock = 0;
         newGood.PassiveConsumption = 0;
         allIngs.Clear();
+        navigationManager.NavigateTo(navigationManager.Uri, forceLoad: true);
+
     }
     public async void AddNewIngredient()
     {
@@ -100,5 +163,18 @@
         Ingredient = new();
         ingName = null;
         ingStock = 0;
+        // GoodIngs.Add(new Good() { Stock = 0, Name = "" });
+        // mappedGoodIngs.Add(mappedGoodIngs[(mappedGoodIngs.Count - 1)] + 1);
+    }
+    public void AddIng()
+    {
+        GoodIngs.Add(new Good() { Stock = 0, Name = "" });
+        mappedGoodIngs.Add(mappedGoodIngs[(mappedGoodIngs.Count - 1)] + 1);
+    }
+    public void aboba(int index)
+    {
+        //DishGoodsList[index].Name = "aboba";
+        // DishGoodsList[index].PassiveConsumption = index;
+        GoodIngs[index].Stock = -1;
     }
 }

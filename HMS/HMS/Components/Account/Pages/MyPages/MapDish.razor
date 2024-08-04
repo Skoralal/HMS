@@ -1,0 +1,123 @@
+﻿@page "/MapDish"
+@inject IHHService HHService
+@inject IMemberService MemberService
+@inject IGoodService GoodService
+@inject IDishService DishService
+@inject IInviteService InviteService
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject NavigationManager navigationManager
+@using System.ComponentModel.DataAnnotations;
+
+@attribute [Authorize]
+@rendermode InteractiveServer
+<h3>MapDish</h3>
+
+
+<EditForm Model="@mappedDish" OnValidSubmit="@HandleNewMappedDBDish">
+
+    <InputDate @bind-Value="@mappedDBDishDate"></InputDate>
+    <!--<input @bind-value="mapHour" @oninput="@ChangeTime" />-->
+    <input type="number" @bind-value="mapHour" @bind-value:event="oninput" @onchange="@ChangeTime" />
+    :
+    <input type="number" @bind-value="mapMinute" @bind-value:event="oninput" @onchange="@ChangeTime" />
+    @if (mapHour < 0)
+    {
+        mapHour = 0;
+    } else if (mapHour > 23)
+    {
+        mapHour = 23;
+    }
+    @if(mapMinute < 0)
+    {
+        mapMinute = 0;
+    }else if (mapMinute > 59)
+    {
+        mapMinute = 59;
+    }
+    <br />
+    @foreach (int index in templateDishesIndex)
+    {
+        <div hidden="@(IncludedDishes[index].Amount < 0)">
+            <label>aboba @index @IncludedDishes[index].Amount</label>
+            <input @bind-value="@IncludedDishes[index].Name" list="list" />
+            <InputNumber @bind-Value="IncludedDishes[index].Amount" />
+            <button type="button" @onclick="() => aboba1(index)">delete</button>
+            <br />
+        </div>
+    }
+    <datalist id="list">
+        @foreach (var dish in TemplateDishes)
+        {
+            <option value="@dish.Name">@dish.Name</option>
+        }
+    </datalist>
+    <br />
+    <button type="button" onclick="@AddDish">Add dish</button>
+    <br />
+    <button type="submit">submit</button>
+</EditForm>
+<h1>@mappedDBDishDate.ToString()</h1>
+<h1> aboba @mapHour:@mapMinute</h1>
+@code {
+    private string UserName;
+    string HHLogin;
+    List<DBDish> HHDishes;
+    DBDish mappedDish = new DBDish();
+    DateTime mappedDBDishDate = DateTime.Today;
+    [Range(0, 23, ErrorMessage = "Value must be between 0 and 23.")]
+    int mapHour { get; set; } = 0;
+    int mapMinute = 0;
+    bool aboba = false;
+    List<DBDish> TemplateDishes = [new DBDish()];
+    public List<int> templateDishesIndex = [0];
+    List<DBDish> IncludedDishes = [new DBDish()];
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+        if (user.Identity.IsAuthenticated)
+        {
+            UserName = user.Identity.Name;
+        }
+        HHLogin = await MemberService.GetParentHH(UserName);
+        HHDishes = await DishService.GetAllHHDishes(HHLogin);
+        TemplateDishes = await DishService.GetTemplateHHDishes(HHLogin);
+    }
+    public void HandleNewMappedDBDish()
+    {
+        string includedDishesString = "";
+        foreach(var dish in IncludedDishes)
+        {
+            includedDishesString += dish.Name + ":" + dish.Amount + ";";
+        }
+        mappedDish.Good = includedDishesString[0..(includedDishesString.Length-1)];
+        mappedDish.Name = "mappedDish";
+        mappedDish.HHOwner = HHLogin;
+        mappedDish.MemberOwner = UserName;
+        mappedDish.Category = ""; // maybe use for repeat?
+        mappedDish.Time = mappedDBDishDate.ToString();
+        mappedDish.Id = HHLogin + UserName + mappedDish.Time + mappedDish.Name;
+        DishService.AddNewDBDish(mappedDish);
+        mappedDish = new();
+        IncludedDishes = [new DBDish()];
+        templateDishesIndex = [0];
+        navigationManager.NavigateTo(navigationManager.Uri, forceLoad: true);
+    }
+    public void ChangeTime()
+    {
+        mappedDBDishDate = mappedDBDishDate.AddHours(mapHour - mappedDBDishDate.Hour);
+        mappedDBDishDate = mappedDBDishDate.AddMinutes(mapMinute - mappedDBDishDate.Minute);
+        aboba = true;
+    }
+    public void AddDish()
+    {
+        IncludedDishes.Add(new DBDish());
+        templateDishesIndex.Add(templateDishesIndex[(templateDishesIndex.Count - 1)] + 1);
+    }
+    public void aboba1(int index)
+    {
+        //DishGoodsList[index].Name = "aboba";
+        // DishGoodsList[index].PassiveConsumption = index;
+        IncludedDishes[index].Amount = -1;
+    }
+}

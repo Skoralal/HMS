@@ -9,6 +9,8 @@ namespace HMS.Services
         Task<DBGood> AddDBGood(DBGood dBGood);
         Task<DBGood> AddHMSGood(Good Good, string OwnerHH);
         Task<List<string>> GetHHGoodsNames(string OwnerHH);
-
+        Task<DBGood> AddHMSBoughtGood(Good Good, string OwnerHH);
+        Task<Good> GetHHConvertedGoods(string OwnerHH);
+        Task<List<Good>> GetHHSimplifiedGoods(string OwnerHH);
     }
 }

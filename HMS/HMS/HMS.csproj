@@ -20,6 +20,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Folder Include="Components\Account\Pages\Other\" />
     <Folder Include="Models\" />
   </ItemGroup>
 

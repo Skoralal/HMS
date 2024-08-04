@@ -6,25 +6,68 @@
 @inject IInviteService InviteService
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject NavigationManager navigationManager
-
+@using System.Globalization
 
 @attribute [Authorize]
 @rendermode InteractiveServer
 
 <PageTitle>DishFactory</PageTitle>
 <h3>DishFactory</h3>
-<EditForm Model="newDBDish" OnInvalidSubmit="HandleNewDish">
-    <input @bind-value="newDBDish.Time" placeholder="Time"/>
+<h1>@Curr</h1>
+<EditForm Model="newDBDish" OnValidSubmit="HandleNewDish">
+    <input @bind-value="newDBDish.Name" placeholder="Name" />
     <br />
-
+    <input @bind-value="newDBDish.Category" placeholder="category" list="categories"/>
+    <br />
+    <datalist id="categories">
+        @foreach(string cat in categories)
+        {
+            <option cat>@cat</option>
+        }
+    </datalist>
+    @if (DishGoodsList.Count != 0)
+    {
+       //@for (int i = 0; i < DishGoodsList.Count; i++)
+        //{
+            //aboba(i);
+            //<label>aboba @i @DishGoodsList[i].Stock</label>
+            //<input @bind-value="@DishGoodsList[i].Name" list="list" @onmouseover="() => hover(i)" />
+            //<InputNumber @bind-Value="DishGoodsList[i].Stock" />
+            //<input @bind-value="@DishGoodsList[i].Stock" />//input is string, so without check
+            //<button @onclick="() => aboba(i)">@i</button>
+            //<br />
+        //}
+        @foreach(int index in mappedDishGoods)
+        {
+            <div hidden="@(DishGoodsList[index].Stock < 0)">
+            <label>aboba @index @DishGoodsList[index].Stock</label>
+            <input @bind-value="@DishGoodsList[index].Name" list="list" @onmouseover="() => hover(index)" />
+            <InputNumber @bind-Value="DishGoodsList[index].Stock" />
+            <button type="button" @onclick="() => aboba(index)">delete</button>
+                <br />
+            </div>
+        }
+    }
+    
+    <datalist id="list">
+        @foreach (var ing in allGoods)
+        {
+            <option value="@ing">@ing</option>
+        }
+    </datalist>
+    <button type="submit"></button>
 </EditForm>
+<button onclick="@AddIng">Add ing</button>
 
 @code {
     DBDish newDBDish = new();
     List<string> allGoods = new();
     string MemberLogin;
     string HHLogin;
-    List<string> DishGoodsList;
+    int Curr = 0;
+    HashSet<string> categories = new();
+    public List<Good> DishGoodsList = [new Good(){Stock = 0, Name = ""}];
+    public List<int> mappedDishGoods = [0];
     protected override async Task OnInitializedAsync()
     {
         var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
@@ -32,22 +75,47 @@
         MemberLogin = user.Identity.Name;
         HHLogin = await MemberService.GetParentHH(MemberLogin);
         allGoods = await GoodService.GetHHGoodsNames(HHLogin);
+        categories = await DishService.GetHHCategories(HHLogin);
+    }
+    public void aboba(int index)
+    {
+        //DishGoodsList[index].Name = "aboba";
+        // DishGoodsList[index].PassiveConsumption = index;
+        DishGoodsList[index].Stock = -1;
+    }
+    public void hover(int index)
+    {
+        Curr = index;
     }
     public async void HandleNewDish()
     {
         string DishGoods = "";
         foreach (var Good in DishGoodsList)
         {
-            DishGoods += Good;
-            DishGoods += ",";
+            if (Good.Stock > 0)
+            {
+                DishGoods += Good.Name;
+                DishGoods += ":";
+                DishGoods += Good.Stock.ToString();
+                DishGoods += ";";
+            }
         }
-        newDBDish.Good = DishGoods;
+        newDBDish.Time = "Template";
+        newDBDish.Good = DishGoods[..(DishGoods.Length-1)];
+        newDBDish.Id = HHLogin + MemberLogin + newDBDish.Time + newDBDish.Name;
+        newDBDish.MemberOwner = MemberLogin;
+        newDBDish.HHOwner = HHLogin;
         await DishService.AddNewDBDish(newDBDish);
         newDBDish = new();
-        navigationManager.Refresh();
+        navigationManager.NavigateTo(navigationManager.Uri, forceLoad: true);
     }
     public void DeleteGood(string goodName)
     {
         allGoods.Remove(goodName);
+    }
+    public void AddIng()
+    {
+        DishGoodsList.Add(new Good() { Stock = 0, Name = "" });
+        mappedDishGoods.Add(mappedDishGoods[(mappedDishGoods.Count - 1)] + 1);
     }
 }

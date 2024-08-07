@@ -12,5 +12,6 @@ namespace HMS.Services
         Task<DBGood> AddHMSBoughtGood(Good Good, string OwnerHH);
         Task<Good> GetHHConvertedGoods(string OwnerHH);
         Task<List<Good>> GetHHSimplifiedGoods(string OwnerHH);
+        Task<Dictionary<string, Good>> GetHHDicGoods(string OwnerHH);
     }
 }

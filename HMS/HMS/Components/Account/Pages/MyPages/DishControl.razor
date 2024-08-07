@@ -23,7 +23,7 @@
 @foreach(var dish in datesDishes)
 {
     <div @onclick="() => SetDataAndNavigate(dish)" style="cursor:pointer">
-        <label>@dish.Time[11..16]</label>
+        <label>@Convert.ToDateTime(dish.Time).ToShortTimeString()</label>
         <br />
         <label>@dish.Good</label>
         <br />

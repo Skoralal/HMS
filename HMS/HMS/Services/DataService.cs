@@ -28,5 +28,16 @@ namespace HMS.Services
             }
             return new Good() { Name = pair[0], Stock = Convert.ToDouble(pair[1]), Ingredients = ings};
         }
+        public Good RestoreGoodFromStringDic(string corpse, Dictionary<string, Good> goods)
+        {
+            var pair = corpse.Split(":");
+            List<Good> ings = new();
+            foreach (var aboba in goods[pair[0]].Ingredients)
+            {
+                ings.Add(new() { Name = aboba.Name, Stock = aboba.Stock * Convert.ToDouble(pair[1]) });
+            }
+            return new Good() { Name = pair[0], Stock = Convert.ToDouble(pair[1]), Ingredients = ings };
+        }
+        
     }
 }

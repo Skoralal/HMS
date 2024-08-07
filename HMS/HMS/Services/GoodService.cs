@@ -76,6 +76,35 @@ namespace HMS.Services
             throw new NotImplementedException();
         }
 
+        public async Task<Dictionary<string, Good>> GetHHDicGoods(string OwnerHH)
+        {
+            List<DBGood> dbGoods = _context.DBGoods.Where(x => x.OwnerHH == OwnerHH).ToList();
+            Dictionary<string, Good> output = new();
+            foreach (var good in dbGoods)
+            {
+                List<Good> Ings = new List<Good>();
+                if (!good.Ingredients.StartsWith("shop"))
+                {
+                    foreach (var pair in good.Ingredients.Split(";"))
+                    {
+                        var splitted = pair.Split(":");
+                        Ings.Add(new Good() { Name = splitted[0], Stock = Convert.ToDouble(splitted[1]) });
+                    }
+                }
+                else
+                {
+                    Ings.Add(new Good() { Name = "shops" });
+                    foreach (var pair in good.Ingredients[6..].Split(";"))
+                    {
+                        Ings.Add(new Good() { Name = pair });
+                    }
+                }
+
+                output.Add(good.Name,new() { Name = good.Name, Stock = good.Stock, Icon = good.Icon, PassiveConsumption = good.PassiveConsumptionRate, Recipe = good.Recipe, Ingredients = Ings });
+            }
+            return output;
+        }
+
         public async Task<List<DBGood>> GetHHGoods(string OwnerLogin)
         {
             return _context.DBGoods.Where(x=>x.OwnerHH == OwnerLogin).ToList();

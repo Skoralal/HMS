@@ -18,19 +18,27 @@
 <h1>@Debug</h1>
 @foreach(Good ass in usedEssential)
 {
-    <h5>@ass.Name</h5>
-    <h5>@ass.Stock</h5>
+    
 }
 <h1>@debug2</h1>
+@foreach(var key in prepGoodsDic.Keys)
+{
+    <h2>@prepGoodsDic[key].Name</h2>
+    <h2>@prepGoodsDic[key].Stock</h2>
+}
 
 @code {
     string MemberLogin = "";
     string HHLogin = "";
-    List<Good> allGoods = new();// iron ingot has no ings
+    //List<Good> allGoods = new();// iron ingot has no ings
+    Dictionary<string, Good> allGoods = new();
     List<DBGood> allEssential = new();
     List<Good> usedEssential = new();
     string Debug = "aboba";
     string debug2 = "";
+    List<Good> prepDecoGoods = new();
+    Dictionary<string, Good> prepGoodsDic = new();
+
     protected override async Task OnInitializedAsync()
     {
         var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
@@ -41,36 +49,91 @@
         }
         HHLogin = await MemberService.GetParentHH(MemberLogin);
         allEssential = await GoodService.GetHHGoods(HHLogin);
-        allGoods = await GoodService.GetHHSimplifiedGoods(HHLogin);
+        //allGoods = await GoodService.GetHHSimplifiedGoods(HHLogin);
+        allGoods = await GoodService.GetHHDicGoods(HHLogin);
         List<Good> deconstructGoods = new();
         DBDish initial = await DishService.GetDBDishByID($"{HHLogin}{MemberLogin}Template{DataService.SharedDish.Good.Split(":")[0]}");
         string aboba1 = $"{HHLogin}{MemberLogin}Template{DataService.SharedDish.Good.Split(":")[0]}";
         initial.Amount = Convert.ToDouble( DataService.SharedDish.Good.Split(":")[1]);
         List<Good> needToBePreped = new();
+        prepDecoGoods = new();
         foreach(var dbgoodstring in initial.Good.Split(";"))
         {
-            deconstructGoods.Add(DataService.RestoreGoodFromString(dbgoodstring, allGoods));
+            var sharedaboba = DataService.RestoreGoodFromStringDic(dbgoodstring, allGoods);
+            deconstructGoods.Add(new(sharedaboba));
+            sharedaboba.Stock = allGoods[sharedaboba.Name].Stock - sharedaboba.Stock;
+            if(sharedaboba.Stock < 0)
+            {
+                sharedaboba.Stock *= -1;
+                prepDecoGoods.Add(new(sharedaboba));
+                allGoods[sharedaboba.Name].Stock = 0;
+            }
+            else
+            {
+                allGoods[sharedaboba.Name].Stock -= sharedaboba.Stock;
+            }
         }
         while(deconstructGoods.Count > 0)
         {
             foreach(var aboba in GetIngs(deconstructGoods[0]))
             {
                 //deconstructGoods.Add(aboba);
-                deconstructGoods.Add(DataService.RestoreGoodFromString($"{aboba.Name}:{aboba.Stock}", allGoods));
+                deconstructGoods.Add(DataService.RestoreGoodFromStringDic($"{aboba.Name}:{aboba.Stock}", allGoods));
             }
+            // if(allGoods[deconstructGoods[0].Name].Stock - deconstructGoods[0].Stock >= 0)
+            // {
+            //     allGoods[deconstructGoods[0].Name].Stock -= deconstructGoods[0].Stock;
+            // }
             deconstructGoods.RemoveAt(0);
             //allGoods = await GoodService.GetHHSimplifiedGoods(HHLogin);
             //await Task.Delay(200);
+        }
+        for (int i = 0; i < prepDecoGoods.Count; i++)
+        {
+            if (prepDecoGoods[i]!=null && !prepDecoGoods[i].Ingredients[0].Name.StartsWith("shop"))
+            {
+                {
+                    foreach (var aboba in GetIngsWithShops(prepDecoGoods[i]))
+                    {
+                        //deconstructGoods.Add(aboba);
+                        if (allGoods[aboba.Name].Stock - aboba.Stock < 0)
+                        {
+                            aboba.Stock -= allGoods[aboba.Name].Stock;
+                            allGoods[aboba.Name].Stock = 0;
+                        }
+                        else
+                        {
+                            allGoods[aboba.Name].Stock -= aboba.Stock;
+                            continue;
+                        }
+                        prepDecoGoods.Add(DataService.RestoreGoodFromStringDic($"{aboba.Name}:{aboba.Stock}", allGoods));
+                    }
+                }
+            }
+        }
+        foreach(var prepGood in prepDecoGoods)
+        {
+            if(prepGood != null)
+            {
+                try
+                {
+                    prepGoodsDic[prepGood.Name].Stock += prepGood.Stock;
+                }
+                catch
+                {
+                    prepGoodsDic.Add(prepGood.Name, prepGood);
+                }
+            }
         }
     }
     public List<Good> GetIngs(Good good)
     {
         List<Good> output = new();//good has ings
-        output = allGoods.Where(x => x.Name == good.Name).First().Ingredients;
+        output = allGoods[good.Name].Ingredients;
         List<Good> actualOutput = new();
         foreach(var ing in output)
         {
-            ing.Ingredients = allGoods.Where(x => x.Name == ing.Name).Select(x => x.Ingredients).First();
+            ing.Ingredients = allGoods[ing.Name].Ingredients;
         }
         // for (int i = 0; i < output.Count; i++)
         // {
@@ -92,6 +155,31 @@
         //here??
         //
         foreach(var aboba in output)
+        {
+            Debug += aboba.Name;
+        }
+        return actualOutput;
+    }
+
+    public List<Good>? GetIngsWithShops(Good good)
+    {
+        if (good.Ingredients[0].Name.StartsWith("shops"))
+        {
+            return null;
+        }
+        List<Good> output = new();//good has ings
+        output = allGoods[good.Name].Ingredients;
+        List<Good> actualOutput = new();
+        foreach (var ing in output)
+        {
+            ing.Ingredients = allGoods[ing.Name].Ingredients;
+        }
+        for (int i = 0; i < output.Count; i++)
+        {
+            actualOutput.Add(new(output[i]));
+            actualOutput.Last().Stock *= good.Stock;
+        }
+        foreach (var aboba in output)
         {
             Debug += aboba.Name;
         }

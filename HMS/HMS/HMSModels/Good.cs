@@ -1,12 +1,21 @@
-﻿namespace HMS.HMSModels
+﻿using System.Runtime.Serialization;
+
+namespace HMS.HMSModels
 {
+    [DataContract]
     public class Good
     {
+        [DataMember]
         public string Name { get; set; }
+        [DataMember]
         public List<Good>? Ingredients { get; set; }
+        [DataMember]
         public double Stock { get; set; }
+        [DataMember]
         public double? PassiveConsumption { get; set; }
+        [DataMember]
         public string? Icon { get; set; }
+        [DataMember]
         public string Recipe { get; set; } = "";
         public Good() { }
         public Good(string name, double stock, double? naturalDecay, string? icon)

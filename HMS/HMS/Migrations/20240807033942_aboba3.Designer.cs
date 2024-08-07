@@ -4,6 +4,7 @@ using HMS.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace HMS.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240807033942_aboba3")]
+    partial class aboba3
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -131,7 +134,7 @@ namespace HMS.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("DBDishes", (string)null);
+                    b.ToTable("DBDishes");
                 });
 
             modelBuilder.Entity("HMS.Entities.DBGood", b =>
@@ -165,7 +168,7 @@ namespace HMS.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("DBGoods", (string)null);
+                    b.ToTable("DBGoods");
                 });
 
             modelBuilder.Entity("HMS.Entities.DBHouseHold", b =>
@@ -182,7 +185,7 @@ namespace HMS.Migrations
 
                     b.HasKey("Login");
 
-                    b.ToTable("DBHouseHolds", (string)null);
+                    b.ToTable("DBHouseHolds");
                 });
 
             modelBuilder.Entity("HMS.Entities.DBMember", b =>
@@ -196,7 +199,7 @@ namespace HMS.Migrations
 
                     b.HasKey("MemberLogin");
 
-                    b.ToTable("DBMembers", (string)null);
+                    b.ToTable("DBMembers");
                 });
 
             modelBuilder.Entity("HMS.Entities.Invite", b =>
@@ -218,7 +221,7 @@ namespace HMS.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Invites", (string)null);
+                    b.ToTable("Invites");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>

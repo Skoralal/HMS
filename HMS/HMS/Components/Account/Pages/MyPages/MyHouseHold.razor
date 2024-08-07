@@ -220,8 +220,11 @@ else
             }
             houseHold.AllDishes.Add(converted);
         }
-        houseHold.Shops = await HHService.GetHHShops(hhLogin);
-        // andrey slaaaave
+        try
+        {
+            houseHold.Shops = await HHService.GetHHShops(hhLogin);
+
+        }catch{}
     }
     public void AddNewShop()
     {

@@ -220,11 +220,8 @@ else
             }
             houseHold.AllDishes.Add(converted);
         }
-        try
-        {
             houseHold.Shops = await HHService.GetHHShops(hhLogin);
 
-        }catch{}
     }
     public void AddNewShop()
     {

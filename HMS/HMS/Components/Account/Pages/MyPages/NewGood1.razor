@@ -1,7 +1,7 @@
 ﻿@page "/NewGood1"
 @inject IGood1Service GoodService
 @inject IMemberService MemberService
-@inject IHHService HHService
+@inject oldIHHService HHService
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject NavigationManager navigationManager
 
@@ -71,10 +71,8 @@
     <button type="submit">Submit</button>
 </EditForm>
 <h1>@Debuh</h1>
-@foreach(var aboba in GoodIngs)
-{
-    <h3>@aboba.Name</h3>
-}
+<h1>@HHLogin</h1>
+
 
 @code {
     double Debuh = 1;
@@ -113,6 +111,9 @@
 
     public async void HandleNewGood()
     {
+        newGood.HHOwner = HHLogin;
+
+        newGood.ID = newGood.HHOwner + newGood.Name;
         newGood.Ingredients = new();
         foreach (var ing in GoodIngs)
         {
@@ -130,7 +131,7 @@
                     return;
                 }
             }
-            await GoodService.AddHMSBoughtGood1(newGood, HHLogin);
+            await GoodService.AddGood1(newGood);
         }
         else
         {

@@ -100,7 +100,7 @@ namespace HMS.Services
                     }
                 }
 
-                output.Add(good.Name,new() { Name = good.Name, Stock = good.Stock, Icon = good.Icon, PassiveConsumption = good.PassiveConsumptionRate, Recipe = good.Recipe, Ingredients = Ings });
+                output.Add(good.Name,new() { Name = good.Name, Stock = good.Stock, Icon = good.Icon,/* PassiveConsumption = good.PassiveConsumptionRate,*/ Recipe = good.Recipe, Ingredients = Ings });
             }
             return output;
         }
@@ -139,7 +139,7 @@ namespace HMS.Services
                     }
                 }
 
-                output.Add(new() {Name = good.Name, Stock = good.Stock , Icon = good.Icon, PassiveConsumption = good.PassiveConsumptionRate, Recipe = good.Recipe, Ingredients = Ings});
+                output.Add(new() {Name = good.Name, Stock = good.Stock , Icon = good.Icon, /*PassiveConsumption = good.PassiveConsumptionRate,*/ Recipe = good.Recipe, Ingredients = Ings});
             }
             return output;
         }

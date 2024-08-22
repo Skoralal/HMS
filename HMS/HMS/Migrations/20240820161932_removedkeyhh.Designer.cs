@@ -4,6 +4,7 @@ using HMS.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace HMS.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240820161932_removedkeyhh")]
+    partial class removedkeyhh
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -250,19 +253,27 @@ namespace HMS.Migrations
 
             modelBuilder.Entity("HMS.Entities.Good", b =>
                 {
-                    b.Property<string>("Name")
+                    b.Property<string>("ID")
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("DishID")
                         .HasColumnType("nvarchar(450)");
 
-                    b.Property<string>("GoodName")
+                    b.Property<string>("GoodID")
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("HHLogin")
                         .HasColumnType("nvarchar(450)");
 
+                    b.Property<string>("HHOwner")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("Icon")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
@@ -276,11 +287,11 @@ namespace HMS.Migrations
                     b.Property<double>("Stock")
                         .HasColumnType("float");
 
-                    b.HasKey("Name");
+                    b.HasKey("ID");
 
                     b.HasIndex("DishID");
 
-                    b.HasIndex("GoodName");
+                    b.HasIndex("GoodID");
 
                     b.HasIndex("HHLogin");
 
@@ -534,7 +545,7 @@ namespace HMS.Migrations
 
                     b.HasOne("HMS.Entities.Good", null)
                         .WithMany("Ingredients")
-                        .HasForeignKey("GoodName");
+                        .HasForeignKey("GoodID");
 
                     b.HasOne("HMS.Entities.HH", null)
                         .WithMany("AllGoods")

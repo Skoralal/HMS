@@ -1,17 +1,17 @@
 ﻿namespace HMS.HMSModels
 {
-    public class Dish
+    public class oldDish
     {
         public bool Cooked { get; set; }
         public bool Consumed { get; set; }
-        public List<Good> Contents { get; set; } = new List<Good>();
+        public List<oldGood> Contents { get; set; } = new List<oldGood>();
         public string Time { get; set; }
         public string Owner { get; set; }
         public double Amount { get; set; }
         public string Recipe { get; set; }
         public string Category { get; set; }
-        public Dish() { }
-        public Dish(bool cooked, bool consumed, List<Good> good, string time, string owner, double amount)
+        public oldDish() { }
+        public oldDish(bool cooked, bool consumed, List<oldGood> good, string time, string owner, double amount)
         {
             this.Cooked = cooked;
             this.Consumed = consumed;

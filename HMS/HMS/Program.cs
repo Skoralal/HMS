@@ -24,12 +24,13 @@ namespace HMS
             builder.Services.AddScoped<IdentityUserAccessor>();
             builder.Services.AddScoped<IdentityRedirectManager>();
             builder.Services.AddScoped<AuthenticationStateProvider, PersistingRevalidatingAuthenticationStateProvider>();
-            builder.Services.AddScoped<IHHService,HHService>();
+            builder.Services.AddScoped<oldIHHService,oldHHService>();
             builder.Services.AddScoped<IMemberService, MemberService>();
             builder.Services.AddScoped<IGoodService, GoodService>();
             builder.Services.AddScoped<IDishService, DishService>();
             builder.Services.AddScoped<IInviteService, InviteService>();
             builder.Services.AddScoped<IGood1Service, Good1Servicecs>();
+            builder.Services.AddScoped<InewHHService, newHHService>();
             builder.Services.AddSingleton<DataService>();
 
             builder.Services.AddAuthentication(options =>

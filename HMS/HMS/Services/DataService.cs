@@ -8,6 +8,7 @@ namespace HMS.Services
     public class DataService
     {
         public DBDish SharedDish { get; set; }
+        public HH currentHH { get; set; }
         public Good StraightConvertCookableDBGoodGood(DBGood dBGood)
         {
             List<Good> ings = new();
@@ -16,7 +17,7 @@ namespace HMS.Services
                 var pair2 = pair.Split(":");
                 ings.Add(new Good() {Name = pair2[0], Stock = Convert.ToDouble(pair2[1]) });
             }
-            return new Good() { Stock = dBGood.Stock, Icon = dBGood.Icon, Name = dBGood.Name, PassiveConsumption = dBGood.PassiveConsumptionRate, Recipe = dBGood.Recipe, Ingredients = ings};
+            return new Good() { Stock = dBGood.Stock, Icon = dBGood.Icon, Name = dBGood.Name,/* PassiveConsumption = dBGood.PassiveConsumptionRate,*/ Recipe = dBGood.Recipe, Ingredients = ings};
         }
         public Good RestoreGoodFromString(string corpse, List<Good> goods)
         {

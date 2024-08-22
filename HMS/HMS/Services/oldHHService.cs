@@ -3,10 +3,10 @@ using HMS.Entities;
 
 namespace HMS.Services
 {
-    public class HHService : IHHService
+    public class oldHHService : oldIHHService
     {
         private readonly ApplicationDbContext _context;
-        public HHService(ApplicationDbContext context)
+        public oldHHService(ApplicationDbContext context)
         {
             _context = context;
         }

@@ -14,6 +14,10 @@ namespace HMS.Services
 
         public async Task<Good1> AddGood1(Good1 good1)
         {
+            foreach (var shop in good1.Ingredients)
+            {
+                shop.HHOwner = good1.HHOwner;
+            }
             _context.Goods1.Add(good1);
             await _context.SaveChangesAsync();
             return good1;
@@ -34,25 +38,25 @@ namespace HMS.Services
         public async Task<DBGood> AddHMSBoughtGood(Good Good, string OwnerHH)
         {
             DBGood converted = new();
-            converted.Name = Good.Name;
-            converted.Stock = Good.Stock;
-            converted.Icon = Good.Icon;
-            converted.PassiveConsumptionRate = Good.PassiveConsumption;
-            converted.Recipe = Good.Recipe;
-            if (Good.Ingredients != null)
-            {
-                converted.Ingredients = "shops:";
-                foreach (var ing in Good.Ingredients)
-                {
-                    converted.Ingredients += ing.Name;
-                    converted.Ingredients += ";";//here
-                }
-            }
-            converted.Ingredients = converted.Ingredients[..(converted.Ingredients.Length - 1)];
-            converted.OwnerHH = OwnerHH;
-            converted.Id = OwnerHH + Good.Name;
-            _context.DBGoods.Add(converted);
-            await _context.SaveChangesAsync();
+            //converted.Name = Good.Name;
+            //converted.Stock = Good.Stock;
+            //converted.Icon = Good.Icon;
+            //converted.PassiveConsumptionRate = Good.PassiveConsumption;
+            //converted.Recipe = Good.Recipe;
+            //if (Good.Ingredients != null)
+            //{
+            //    converted.Ingredients = "shops:";
+            //    foreach (var ing in Good.Ingredients)
+            //    {
+            //        converted.Ingredients += ing.Name;
+            //        converted.Ingredients += ";";//here
+            //    }
+            //}
+            //converted.Ingredients = converted.Ingredients[..(converted.Ingredients.Length - 1)];
+            //converted.OwnerHH = OwnerHH;
+            //converted.Id = OwnerHH + Good.Name;
+            //_context.DBGoods.Add(converted);
+            //await _context.SaveChangesAsync();
             return converted;
         }
 

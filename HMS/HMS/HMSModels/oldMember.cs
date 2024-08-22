@@ -1,10 +1,10 @@
 ﻿namespace HMS.HMSModels
 {
-    public class Member
+    public class oldMember
     {
         public string Name { get; set; }
-        public List<Dish>? Schedule { get; set; }
-        public Member(string name)
+        public List<oldDish>? Schedule { get; set; }
+        public oldMember(string name)
         {
             this.Name = name;
         }

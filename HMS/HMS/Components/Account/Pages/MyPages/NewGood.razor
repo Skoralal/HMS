@@ -1,7 +1,9 @@
 ﻿@page "/NewGood"
 @inject IGoodService GoodService
 @inject IMemberService MemberService
-@inject IHHService HHService
+@inject oldIHHService old1HHService
+@inject InewHHService HHService
+@inject DataService DS
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject NavigationManager navigationManager
 
@@ -21,8 +23,8 @@
         <InputCheckbox @bind-Value="isBought">Is bought</InputCheckbox>
         @foreach (int index in mappedGoodIngs)
         {
-            <div hidden="@(GoodIngs[index].Stock < 0)" style="color: red">
-                <label>@(isBought ? (shops.Contains(GoodIngs[index].Name) || GoodIngs[index].Name == "" ? "" : "error") : (allIngs.Contains(GoodIngs[index].Name) || GoodIngs[index].Name == "" ? "" : "error"))</label>
+            <div hidden="@(GoodIngs[index].Stock <= 0)" style="color: red">
+                <label>@(isBought ? (shops.Contains(GoodIngs[index].Name) || GoodIngs[index].Name == "" ? "" : "error") : (allIngs.Select(e=>e.Name).Contains(GoodIngs[index].Name) || GoodIngs[index].Name == "" ? "" : "error"))</label>
                 <input @bind-value="@GoodIngs[index].Name" list="@(isBought ? "shops" : "list")" />
                 <InputNumber @bind-Value="GoodIngs[index].Stock" />
                 <button type="button" @onclick="() => GoodIngs[index].Stock = -1">delete</button>
@@ -37,7 +39,7 @@
     <datalist id="list">
         @foreach(var ing in allIngs)
         {
-            <option value="@ing">@ing</option>
+            <option value="@ing">@ing.Name</option>
         }
     </datalist>
     <datalist id="shops">
@@ -83,11 +85,11 @@
     public Good Ingredient = new();
     public string ingName;
     public double ingStock;
-    public List<string> allIngs = new();
+    public List<Good> allIngs = new();
     string HHLogin;
     bool isBought = false;
     List<string> shops = new();
-    List<Good> GoodIngs = [new Good() { Stock = 0, Name = "" }];
+    List<Good> GoodIngs = [new Good(){Stock = 1}];
     public List<int> mappedGoodIngs = [0];
     protected override async Task OnInitializedAsync()
     {
@@ -97,18 +99,11 @@
         {
             UserName = user.Identity.Name;
         }
-        HHLogin = await MemberService.GetParentHH(UserName);
-        GetAllGoodsForIngs();
+        HHLogin = DS.currentHH.Login;
+        allIngs = DS.currentHH.AllGoods.Select(e => new Good(e)).ToList();
         newGood.Stock = 0;
         newGood.PassiveConsumption = 0;
-        shops = await HHService.GetHHShops(HHLogin);
-    }
-    public async void GetAllGoodsForIngs()
-    {
-        foreach(DBGood dBGood in await GoodService.GetHHGoods(HHLogin))
-        {
-            allIngs.Add(dBGood.Name);
-        }
+        shops = DS.currentHH.Shops;
     }
 
     public async void HandleNewGood()
@@ -116,9 +111,16 @@
         newGood.Ingredients = new();
         foreach (var ing in GoodIngs)
         {
-            if ((ing.Stock > 0) || (isBought && ing.Stock >=0))
+            if ((ing.Stock > 0) || (isBought && ing.Stock >=0))//one ing can be bought while another is not in the same good
             {
-                newGood.Ingredients.Add(ing);
+                if (isBought)
+                {
+                    newGood.Ingredients.Add(ing);
+                }
+                else
+                {
+                    newGood.Ingredients.Add(new Good(DS.currentHH.AllGoods.Where(x => x.Name == ing.Name).First()));
+                }
             }
         }
         if (isBought)
@@ -130,19 +132,21 @@
                     return;
                 }
             }
-            await GoodService.AddHMSBoughtGood(newGood, HHLogin);
+            //await GoodService.AddHMSBoughtGood(newGood, HHLogin);
         }
         else
         {
             foreach (var ing in newGood.Ingredients)
             {
-                if (!allIngs.Contains(ing.Name))
+                if (!allIngs.Select(e=>e.Name).Contains(ing.Name))
                 {
                     return;
                 }
             }
-            await GoodService.AddHMSGood(newGood, HHLogin);
+            //await GoodService.AddHMSGood(newGood, HHLogin);
         }
+        DS.currentHH.AllGoods.Add(newGood);
+        await HHService.UpdateHH();
         newGood = new();
         newGood.Name = "";
         newGood.Stock = 0;
@@ -151,7 +155,7 @@
         navigationManager.NavigateTo(navigationManager.Uri, forceLoad: true);
 
     }
-    public async void AddNewIngredient()
+    public void AddNewIngredient()
     {
         if(newGood.Ingredients == null)
         {
@@ -168,13 +172,11 @@
     }
     public void AddIng()
     {
-        GoodIngs.Add(new Good() { Stock = 0, Name = "" });
+        GoodIngs.Add(new Good() { Stock = 1});
         mappedGoodIngs.Add(mappedGoodIngs[(mappedGoodIngs.Count - 1)] + 1);
     }
     public void aboba(int index)
     {
-        //DishGoodsList[index].Name = "aboba";
-        // DishGoodsList[index].PassiveConsumption = index;
         GoodIngs[index].Stock = -1;
     }
 }

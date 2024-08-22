@@ -13,5 +13,6 @@ namespace HMS.Data
         public DbSet<DBMember> DBMembers {  get; set; }
         public DbSet<Invite> Invites {  get; set; }
         public DbSet<Good1> Goods1 {  get; set; }
+        public DbSet<HH> HHs {  get; set; }
     }
 }

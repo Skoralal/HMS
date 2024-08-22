@@ -4,9 +4,9 @@
     {
         public string Login { get; set; }
         public string Password { get; set; }
-        public List<Good> AllGoods { get; set; } = new List<Good>();
-        public List<Dish> AllDishes { get; set; } = new List<Dish>();
-        public List<Member> AllMembers { get; set; } = new List<Member>();
+        public List<oldGood> AllGoods { get; set; } = new List<oldGood>();
+        public List<oldDish> AllDishes { get; set; } = new List<oldDish>();
+        public List<oldMember> AllMembers { get; set; } = new List<oldMember>();
         public List<string> Shops { get; set; } = new();
         public HouseHold()
         {
@@ -18,7 +18,7 @@
             this.Login = login;
             this.Password = password;
         }
-        public HouseHold(string login, string password, List<Good> allGoods, List<Dish> allDishes, List<Member> allMembers)
+        public HouseHold(string login, string password, List<oldGood> allGoods, List<oldDish> allDishes, List<oldMember> allMembers)
         {
             this.Login = login;
             this.Password = password;

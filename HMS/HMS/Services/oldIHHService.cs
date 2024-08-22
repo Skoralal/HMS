@@ -2,7 +2,7 @@
 
 namespace HMS.Services
 {
-    public interface IHHService
+    public interface oldIHHService
     {
         Task<DBHouseHold> CreateHH(DBHouseHold dBHH);
         Task<DBHouseHold> GetHHByID(string LoginToSearch);

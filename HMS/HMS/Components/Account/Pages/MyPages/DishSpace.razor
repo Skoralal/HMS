@@ -1,5 +1,5 @@
 ﻿@page "/DishSpace"
-@inject IHHService HHService
+@inject oldIHHService HHService
 @inject IMemberService MemberService
 @inject IGoodService GoodService
 @inject IDishService DishService
@@ -60,12 +60,12 @@
         foreach(var dbgoodstring in initial.Good.Split(";"))
         {
             var sharedaboba = DataService.RestoreGoodFromStringDic(dbgoodstring, allGoods);
-            deconstructGoods.Add(new(sharedaboba));
+            //deconstructGoods.Add(new(sharedaboba));
             sharedaboba.Stock = allGoods[sharedaboba.Name].Stock - sharedaboba.Stock;
             if(sharedaboba.Stock < 0)
             {
                 sharedaboba.Stock *= -1;
-                prepDecoGoods.Add(new(sharedaboba));
+                //prepDecoGoods.Add(new(sharedaboba));
                 allGoods[sharedaboba.Name].Stock = 0;
             }
             else

@@ -80,7 +80,7 @@ else
         @foreach (var good in DataService.currentHH.AllGoods)
         {
             <li>@good.Name - @good.Stock</li>
-            <button @onclick="() => DataService.currentHH.AllGoods.Remove(good)"></button>
+            <button @onclick="() => {DataService.currentHH.AllGoods.Remove(good); HHService.UpdateHH();}"></button>
         }
     </ul>
 }
@@ -121,7 +121,10 @@ else
             }
             else
             {
-                DataService.currentHH = await HHService.GetHHByUserLogin(UserLogin);
+                if (DataService.currentHH == null)
+                {
+                    DataService.currentHH = await HHService.GetHHByUserLogin(UserLogin);
+                }
             }
         }
         catch
@@ -165,8 +168,8 @@ else
     }
     public async Task<bool> SendInvite()
     {
-        try
-        {
+        //try
+        //{
             newInvite.Id = DataService.currentHH.Login + newInvite.Reciever;
             newInvite.SenderHH = DataService.currentHH.Login;
             newInvite.Sender = UserLogin;
@@ -174,12 +177,12 @@ else
             newInvite = new();
             InviteSent = true;
             return true;  
-        }
-        catch
-        {
-            InviteSent = false;
-            return false;
-        }
+        //}
+        //catch
+        //{
+            //InviteSent = false;
+            //return false;
+        //}
 
     }
     public async void assembleHouseHoldOld()

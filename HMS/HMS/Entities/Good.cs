@@ -1,5 +1,6 @@
 ﻿using HMS.HMSModels;
 using System.ComponentModel.DataAnnotations;
+using System.Text.Json;
 
 namespace HMS.Entities
 {
@@ -12,18 +13,16 @@ namespace HMS.Entities
         public double PassiveConsumption { get; set; } = 0;
         public string Icon { get; set; } = "default";
         public string Recipe { get; set; } = "";
+        public Good? Parent { get; set; }
         public Good() { }
         public Good(Good good)
         {
             Name = good.Name;
-            Ingredients = good.Ingredients;
+            Ingredients = new List<Good>( good.Ingredients);
             Stock = good.Stock;
             PassiveConsumption = good.PassiveConsumption;
             Icon = good.Icon;
             Recipe = good.Recipe;
         }
-        
-        
-
     }
 }

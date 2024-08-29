@@ -4,6 +4,7 @@ using HMS.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace HMS.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240825062717_ver3")]
+    partial class ver3
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -250,7 +253,7 @@ namespace HMS.Migrations
 
             modelBuilder.Entity("HMS.Entities.Good", b =>
                 {
-                    b.Property<string>("Name")
+                    b.Property<string>("Id")
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("DishID")
@@ -263,8 +266,9 @@ namespace HMS.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("ParentName")
-                        .HasColumnType("nvarchar(450)");
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<double>("PassiveConsumption")
                         .HasColumnType("float");
@@ -276,13 +280,16 @@ namespace HMS.Migrations
                     b.Property<double>("Stock")
                         .HasColumnType("float");
 
-                    b.HasKey("Name");
+                    b.Property<string>("parentId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
 
                     b.HasIndex("DishID");
 
                     b.HasIndex("HHLogin");
 
-                    b.HasIndex("ParentName");
+                    b.HasIndex("parentId");
 
                     b.ToTable("Good");
                 });
@@ -293,18 +300,6 @@ namespace HMS.Migrations
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("Password")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("SerializedDish")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("SerializedGoods")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("SerializedMember")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
@@ -548,11 +543,11 @@ namespace HMS.Migrations
                         .WithMany("AllGoods")
                         .HasForeignKey("HHLogin");
 
-                    b.HasOne("HMS.Entities.Good", "Parent")
+                    b.HasOne("HMS.Entities.Good", "ParentGood")
                         .WithMany("Ingredients")
-                        .HasForeignKey("ParentName");
+                        .HasForeignKey("parentId");
 
-                    b.Navigation("Parent");
+                    b.Navigation("ParentGood");
                 });
 
             modelBuilder.Entity("HMS.Entities.Member", b =>

@@ -1,18 +1,20 @@
 ﻿@page "/NewGood"
+@using System.Text.Json
 @inject IGoodService GoodService
 @inject IMemberService MemberService
 @inject oldIHHService old1HHService
 @inject InewHHService HHService
-@inject DataService DS
+@inject IDataService DS
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject NavigationManager navigationManager
-
+@inject ProtectedSessionStorage sessionStorage
 @attribute [Authorize]
 @rendermode InteractiveServer
-
+<h1>@HHService.Aboba</h1>
 <h3>NewGood</h3>
 <h1>@shops.Count</h1>
 <h1>@newGood.Recipe</h1>
+<h1>@HHService.currentHH.GoodsDic.Count</h1>
 <EditForm Model="newGood" OnValidSubmit="HandleNewGood">
     <label>Name</label>
     <InputText @bind-Value="@newGood.Name">@newGood.Name</InputText>
@@ -24,7 +26,7 @@
         @foreach (int index in mappedGoodIngs)
         {
             <div hidden="@(GoodIngs[index].Stock <= 0)" style="color: red">
-                <label>@(isBought ? (shops.Contains(GoodIngs[index].Name) || GoodIngs[index].Name == "" ? "" : "error") : (allIngs.Select(e=>e.Name).Contains(GoodIngs[index].Name) || GoodIngs[index].Name == "" ? "" : "error"))</label>
+                <label>@(isBought ? (shops.Contains(GoodIngs[index].Name) || GoodIngs[index].Name == "" ? "" : "error") : (HHService.currentHH.GoodsDic.Keys.Contains(GoodIngs[index].Name) || GoodIngs[index].Name == "" ? "" : "error"))</label>
                 <input @bind-value="@GoodIngs[index].Name" list="@(isBought ? "shops" : "list")" />
                 <InputNumber @bind-Value="GoodIngs[index].Stock" />
                 <button type="button" @onclick="() => GoodIngs[index].Stock = -1">delete</button>
@@ -37,13 +39,13 @@
     
     <br />
     <datalist id="list">
-        @foreach(var ing in allIngs)
+        @foreach (var ing in HHService.currentHH.GoodsDic.Keys)
         {
-            <option value="@ing">@ing.Name</option>
+            <option value="@ing">@ing</option>
         }
     </datalist>
     <datalist id="shops">
-        @foreach(var shop in shops)
+        @foreach (var shop in HHService.currentHH.Shops)
         {
             <option value="@shop">@shop</option>
         }
@@ -99,18 +101,30 @@
         {
             UserName = user.Identity.Name;
         }
-        HHLogin = DS.currentHH.Login;
-        allIngs = DS.currentHH.AllGoods.Select(e => new Good(e)).ToList();
+        
         newGood.Stock = 0;
         newGood.PassiveConsumption = 0;
-        shops = DS.currentHH.Shops;
     }
 
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            // Only load data after the first render, to prevent multiple calls
+            await HHService.LoadDataFromSession();
+            shops = HHService.currentHH.Shops;
+            HHLogin = HHService.currentHH.Login;
+            allIngs = HHService.currentHH.GoodsDic.Values.Select(e => new Good(e)).ToList();
+            // Trigger a re-render if necessary
+            StateHasChanged();
+        }
+    }
     public async void HandleNewGood()
     {
         newGood.Ingredients = new();
         foreach (var ing in GoodIngs)
         {
+            ing.Parent = newGood;
             if ((ing.Stock > 0) || (isBought && ing.Stock >=0))//one ing can be bought while another is not in the same good
             {
                 if (isBought)
@@ -119,7 +133,14 @@
                 }
                 else
                 {
-                    newGood.Ingredients.Add(new Good(DS.currentHH.AllGoods.Where(x => x.Name == ing.Name).First()));
+                    if(newGood.Stock > 0)
+                    {
+                        newGood.Ingredients.Add(new Good(HHService.currentHH.NormalizedGoodsDic[ing.Name], newGood).Cleansed(ing.Stock * newGood.Stock, HHService.currentHH.NormalizedGoodsDic));
+                    }
+                    else
+                    {
+                        newGood.Ingredients.Add(new Good(HHService.currentHH.NormalizedGoodsDic[ing.Name], newGood).Cleansed(ing.Stock * 1, HHService.currentHH.NormalizedGoodsDic));
+                    }
                 }
             }
         }
@@ -145,14 +166,35 @@
             }
             //await GoodService.AddHMSGood(newGood, HHLogin);
         }
-        DS.currentHH.AllGoods.Add(newGood);
-        await HHService.UpdateHH();
+        //newGood.CascadeUpdateStock();
+        if(newGood.Stock == 0)
+        {
+            var mask = new Good(newGood);
+            mask.Stock = 1;
+            HHService.currentHH.AddNormalizedGood(mask.Cleansed(1, HHService.currentHH.NormalizedGoodsDic));
+            newGood.Stock = 0;
+            newGood.CascadeUpdateStock();
+            HHService.currentHH.AddGood(new(newGood));
+        }
+        else
+        {
+            HHService.currentHH.AddGood(new(newGood));
+            HHService.currentHH.AddNormalizedGood(newGood.Cleansed(1, HHService.currentHH.NormalizedGoodsDic));
+        }
+
+        await HHService.UpdateHH();//HERE
+                                   //await HHService.SaveToSessionStorage();
         newGood = new();
         newGood.Name = "";
         newGood.Stock = 0;
         newGood.PassiveConsumption = 0;
         allIngs.Clear();
-        navigationManager.NavigateTo(navigationManager.Uri, forceLoad: true);
+        GoodIngs = [new Good() { Stock = 1 }];
+        mappedGoodIngs = [0];
+        newGood.Ingredients.Clear();
+        allIngs = HHService.currentHH.GoodsDic.Values.Select(e => new Good(e)).ToList();
+        StateHasChanged();
+        //navigationManager.NavigateTo(navigationManager.Uri, forceLoad: true);
 
     }
     public void AddNewIngredient()

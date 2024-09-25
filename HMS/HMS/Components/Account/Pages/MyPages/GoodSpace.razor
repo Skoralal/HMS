@@ -1,0 +1,108 @@
+﻿@page "/GoodSpace"
+@inject InewHHService HHService
+@inject IMemberService MemberService
+@inject IGoodService GoodService
+@inject IDishService DishService
+@inject IInviteService InviteService
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject NavigationManager navigationManager
+@inject IDataService DataService
+
+
+@attribute [Authorize]
+@rendermode @(new InteractiveServerRenderMode(false))
+<PageTitle>GoodSpace</PageTitle>
+<label>@HHService.currentHH.GoodsDic[HHService.SharedGood.Name].Name ---</label>
+<label>@HHService.currentHH.GoodsDic[HHService.SharedGood.Name].Stock</label>
+<br />
+<input @bind-value="amountToConsume" />
+<button @onclick="LocalConsume">Consume</button>
+<br />
+<input @bind-value="amountToCook" />
+@if (isBought)
+{
+    <button @onclick="LocalBuy">Buy</button>
+}
+else
+{
+    <button @onclick="LocalCook">Cook</button>
+}
+<br />
+<label>@output</label>
+@foreach(var ess in aboba.Keys)
+{
+    <div>
+        <h2>@aboba[ess].Name</h2> - <label>@aboba[ess].Stock</label>
+    </div>
+}
+@code {
+    Dictionary<string, Good> aboba = new();
+    List<Good> Essentials = new();
+    double amountToConsume = 0;
+    double amountToCook = 0;
+    string output;
+    bool isBought = false;
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+        string MemberLogin = "";
+        if (user.Identity.IsAuthenticated)
+        {
+            MemberLogin = user.Identity.Name;
+        }
+
+    }
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            // Only load data after the first render, to prevent multiple calls
+            await HHService.LoadDataFromSession();
+            foreach (var ass in HHService.currentHH.GoodsDic[HHService.SharedGood.Name].Ingredients)
+            {
+                Essentials.Add(ass);
+            }
+            for (int i = 0; i < Essentials.Count; i++)
+            {
+                foreach (var ing in Essentials[i].Ingredients)
+                {
+                    Essentials.Add(ing);
+                }
+            }
+            foreach (var good in Essentials)
+            {
+                if (!aboba.ContainsKey(good.Name))
+                {
+                    aboba.Add(good.Name, good);
+                }
+                else
+                {
+                    aboba[good.Name].Stock += good.Stock;
+                }
+            }
+            if (HHService.currentHH.Shops.Contains(HHService.SharedGood.Ingredients[0].Name))
+            {
+                isBought = true;
+            }
+            // Trigger a re-render if necessary
+            StateHasChanged();
+        }
+    }
+    private void LocalConsume()
+    {
+        output = HHService.SharedGood.Consume(amountToConsume, HHService.currentHH.NormalizedGoodsDic);
+        HHService.UpdateHH();
+    }
+    private void LocalCook()
+    {
+        output = HHService.Cook(amountToCook);
+        // output = HHService.SharedGood.Cook(amountToCook, HHService.currentHH.NormalizedGoodsDic);
+        HHService.UpdateHH();
+    }
+    private void LocalBuy()
+    {
+        output = HHService.Buy(amountToCook);
+        HHService.UpdateHH();
+    }
+}

@@ -4,6 +4,7 @@ using HMS.Components.Account;
 using HMS.Data;
 using HMS.Services;
 using Microsoft.AspNetCore.Components.Authorization;
+using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
@@ -13,6 +14,7 @@ namespace HMS
     {
         public static void Main(string[] args)
         {
+
             var builder = WebApplication.CreateBuilder(args);
 
             // Add services to the container.
@@ -24,6 +26,8 @@ namespace HMS
             builder.Services.AddScoped<IdentityUserAccessor>();
             builder.Services.AddScoped<IdentityRedirectManager>();
             builder.Services.AddScoped<AuthenticationStateProvider, PersistingRevalidatingAuthenticationStateProvider>();
+            builder.Services.AddScoped<IDataService, DataService>();
+            //builder.Services.AddSingleton<IDataService, DataService>();
             builder.Services.AddScoped<oldIHHService,oldHHService>();
             builder.Services.AddScoped<IMemberService, MemberService>();
             builder.Services.AddScoped<IGoodService, GoodService>();
@@ -31,7 +35,9 @@ namespace HMS
             builder.Services.AddScoped<IInviteService, InviteService>();
             builder.Services.AddScoped<IGood1Service, Good1Servicecs>();
             builder.Services.AddScoped<InewHHService, newHHService>();
-            builder.Services.AddSingleton<DataService>();
+            builder.Services.AddScoped<ProtectedSessionStorage>();
+            //builder.Services.AddSingleton<InewHHService, newHHService>();
+            //builder.Services.AddSingleton<DataService>();
 
             builder.Services.AddAuthentication(options =>
                 {
@@ -51,9 +57,10 @@ namespace HMS
                 .AddDefaultTokenProviders();
 
             builder.Services.AddSingleton<IEmailSender<ApplicationUser>, IdentityNoOpEmailSender>();
-
+            builder.Services.AddSignalR(e => {
+                e.MaximumReceiveMessageSize = 102400000;
+            });
             var app = builder.Build();
-
             // Configure the HTTP request pipeline.
             if (app.Environment.IsDevelopment())
             {

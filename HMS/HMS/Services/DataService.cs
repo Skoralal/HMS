@@ -5,10 +5,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace HMS.Services
 {
-    public class DataService
+    public class DataService:IDataService
     {
-        public DBDish SharedDish { get; set; }
-        public HH currentHH { get; set; }
+
         public Good StraightConvertCookableDBGoodGood(DBGood dBGood)
         {
             List<Good> ings = new();

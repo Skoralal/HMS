@@ -1,5 +1,5 @@
 ﻿@page "/MapDish"
-@inject oldIHHService HHService
+@inject InewHHService HHService
 @inject IMemberService MemberService
 @inject IGoodService GoodService
 @inject IDishService DishService
@@ -52,8 +52,6 @@
         }
     </datalist>
     <br />
-    <button type="button" onclick="@AddDish">Add dish</button>
-    <br />
     <button type="submit">submit</button>
 </EditForm>
 <h1>@mappedDBDishDate.ToString()</h1>
@@ -62,15 +60,15 @@
     private string UserName;
     string HHLogin;
     List<DBDish> HHDishes;
-    DBDish mappedDish = new DBDish();
+    Dish mappedDish = new Dish();
     DateTime mappedDBDishDate = DateTime.Today;
     [Range(0, 23, ErrorMessage = "Value must be between 0 and 23.")]
     int mapHour { get; set; } = 0;
     int mapMinute = 0;
     bool aboba = false;
-    List<DBDish> TemplateDishes = [new DBDish()];
+    List<Dish> TemplateDishes = [new Dish()];
     public List<int> templateDishesIndex = [0];
-    List<DBDish> IncludedDishes = [new DBDish()];
+    List<Dish> IncludedDishes = [new Dish()];
     protected override async Task OnInitializedAsync()
     {
         var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
@@ -81,38 +79,41 @@
         }
         HHLogin = await MemberService.GetParentHH(UserName);
         HHDishes = await DishService.GetAllHHDishes(HHLogin);
-        TemplateDishes = await DishService.GetTemplateHHDishes(HHLogin);
+
+    }
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            // Only load data after the first render, to prevent multiple calls
+            await HHService.LoadDataFromSession();
+            TemplateDishes = HHService.currentHH.DishesDic.Where(x => x.Key.StartsWith("Template"))
+                                .Select(x => x.Value).ToList();
+            // Trigger a re-render if necessary
+            StateHasChanged();
+        }
     }
     public void HandleNewMappedDBDish()
     {
-        string includedDishesString = "";
-        foreach(var dish in IncludedDishes)
-        {
-            includedDishesString += dish.Name + ":" + dish.Amount + ";";
-        }
-        mappedDish.Good = includedDishesString[0..(includedDishesString.Length-1)];
-        mappedDish.Name = "mappedDish";
-        mappedDish.HHOwner = HHLogin;
-        mappedDish.MemberOwner = UserName;
         mappedDish.Category = ""; // maybe use for repeat?
         mappedDish.Time = mappedDBDishDate.ToString();
-        mappedDish.Id = HHLogin + UserName + mappedDish.Time + mappedDish.Name;
-        DishService.AddNewDBDish(mappedDish);
+        mappedDish.ID = mappedDish.Time + UserName + mappedDish.Name;
+        for (int i = 0; i < IncludedDishes.Count; i++)
+        {
+            IncludedDishes[i] = HHService.currentHH.DishesDic[$"Template{IncludedDishes[i].Name}"];
+        }
+        mappedDish.Contents = IncludedDishes.SelectMany(e => e.Contents).ToList();
+        HHService.currentHH.DishesDic.Add(mappedDish.ID, mappedDish);
+        HHService.UpdateHH();
         mappedDish = new();
-        IncludedDishes = [new DBDish()];
         templateDishesIndex = [0];
-        navigationManager.NavigateTo(navigationManager.Uri, forceLoad: true);
+        StateHasChanged();
     }
     public void ChangeTime()
     {
         mappedDBDishDate = mappedDBDishDate.AddHours(mapHour - mappedDBDishDate.Hour);
         mappedDBDishDate = mappedDBDishDate.AddMinutes(mapMinute - mappedDBDishDate.Minute);
         aboba = true;
-    }
-    public void AddDish()
-    {
-        IncludedDishes.Add(new DBDish());
-        templateDishesIndex.Add(templateDishesIndex[(templateDishesIndex.Count - 1)] + 1);
     }
     public void aboba1(int index)
     {

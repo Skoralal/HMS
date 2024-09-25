@@ -6,7 +6,7 @@ namespace HMS.Entities
     public class Dish
     {
         [Key]
-        public string ID { get; set; } = "";
+        public string ID { get; set; } = "";//Time+Owner+Name
         public string Name { get; set; } = "";
         public bool Cooked { get; set; } = false;
         public bool Consumed { get; set; } = false ;

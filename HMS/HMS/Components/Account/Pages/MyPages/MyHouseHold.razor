@@ -5,28 +5,32 @@
 @inject IGoodService GoodService
 @inject IDishService DishService
 @inject IInviteService InviteService
-@inject DataService DataService
+@inject IDataService DataService
+@inject ProtectedSessionStorage sessionStorage
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject NavigationManager navigationManager
+<head>
 
+    <link rel="stylesheet" href="MyPages/MyHouseHold.razor.css" />
+</head>
 
 @attribute [Authorize]
 @rendermode InteractiveServer
 
 <PageTitle>MyHouseHold</PageTitle>
-
+<div class="backaboba">
 <h1>MyHouseHold</h1>
 
 <AuthorizeView>
     Hello @context.User.Identity?.Name!
 </AuthorizeView>
-@if (DataService.currentHH == null && HHFound)
+    @if (HHService.currentHH == null && HHFound)
 {
     <span>Loading</span>
 }
 else if (HHFound)
 {
-    <span>@DataService.currentHH!.Login</span>
+        <span>@HHService.currentHH!.Login</span>
     <br />
     <label>Invite new member</label>
     <br />
@@ -40,12 +44,12 @@ else if (HHFound)
 }
 else if (!HHFound)
 {
-    <EditForm Model="DataService.currentHH" OnValidSubmit="HandleNewHH">
+        <EditForm Model="HHService.currentHH" OnValidSubmit="HandleNewHH">
         <label>House Hold Login</label>
-        <InputText @bind-Value="@DataService.currentHH!.Login">@DataService.currentHH!.Login</InputText>
+            <InputText @bind-Value="@HHService.currentHH!.Login">@HHService.currentHH!.Login</InputText>
         <br />
         <label>House Hold Password</label>
-        <InputText @bind-Value="@DataService.currentHH!.Password">@DataService.currentHH!.Password</InputText>
+            <InputText @bind-Value="@HHService.currentHH!.Password">@HHService.currentHH!.Password</InputText>
         <br />
 
         <button type="submit">Submit</button>
@@ -57,35 +61,38 @@ else if (!HHFound)
     }
 }
 <br />
-@if (DataService.currentHH != null)
+    @if (HHService.currentHH != null)
 {
-    <span>@DataService.currentHH.Login</span>
+        <span>@HHService.currentHH.Login</span>
     <br />
 }
 else
 {
     <span>null</span>
 }
-@if (DataService.currentHH != null && DataService.currentHH.AllGoods != null && HHFound)
+    @if (HHService.currentHH != null && HHService.currentHH.GoodsDic != null && HHFound)
 {
-    <label>@DataService.currentHH.Shops.Count</label>
+        <label>@HHService.currentHH.Shops.Count</label>
     <br />
-    <label>My shops : @string.Join(", ", DataService.currentHH.Shops)</label>
+        <label>My shops : @string.Join(", ", HHService.currentHH.Shops)</label>
     <br />
-    <label>Add new</label>
+    <label style="color:red">Add new</label>
     <input @bind-value="newShop" />
     <button onclick="@AddNewShop">Add</button>
-    <h1>@DataService.currentHH.AllGoods.Count</h1>
+        <h1>@HHService.currentHH.GoodsDic.Count</h1>
     <ul>
-        @foreach (var good in DataService.currentHH.AllGoods)
+            @foreach (var good in HHService.currentHH.GoodsDic.Keys)
         {
-            <li>@good.Name - @good.Stock</li>
-            <button @onclick="() => {DataService.currentHH.AllGoods.Remove(good); HHService.UpdateHH();}"></button>
+                <li @onclick="() => SetDataAndNavigate(HHService.currentHH.GoodsDic[good])" style="cursor:pointer">@HHService.currentHH.GoodsDic[good].Name - @HHService.currentHH.GoodsDic[good].Stock</li>
+                <button class="aboba" @onclick="() => {HHService.currentHH.GoodsDic.Remove(good);HHService.currentHH.NormalizedGoodsDic.Remove(good); HHService.UpdateHH();}">Remove</button>
         }
     </ul>
 }
-<button class="btn-primary" @onclick='() => navigationManager.NavigateTo("/NewGood")'>Add new good</button>
-
+    <button class="aboba" @onclick='() => {
+        HHService.SaveToSessionStorage();
+        navigationManager.NavigateTo("/NewGood");
+    }'>Add new good</button>
+</div>
 @code {
     // List<DBGood> goods = null;
     public HH? HH;
@@ -103,35 +110,53 @@ else
     {
         var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
         var user = authState.User;
-
+        HHService.Aboba = "aboba";
         if (user.Identity.IsAuthenticated)
         {
             UserLogin = user.Identity.Name;
         }
-        try
+
+
+    }
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
         {
-            //hhLogin = await MemberService.GetParentHH(UserName);
-            //newHouseHold = await HHService.GetHHByID(hhLogin);
-            // goods = await GoodService.GetHHGoods(hhLogin);
-            if (await HHService.GetHHByUserLogin(UserLogin) == null)
+            // Only load data after the first render, to prevent multiple calls
+            await HHService.LoadDataFromSession();
+
+            // Trigger a re-render if necessary
+            //StateHasChanged();
+            try
+            {
+                //hhLogin = await MemberService.GetParentHH(UserName);
+                //newHouseHold = await HHService.GetHHByID(hhLogin);
+                // goods = await GoodService.GetHHGoods(hhLogin);
+                if (HHService.currentHH == null || string.IsNullOrEmpty(HHService.currentHH.Password))
+                {
+                    if (await HHService.GetHHByUserLogin(UserLogin) == null)
+                    {
+                        HHFound = false;
+                        myInvites = await InviteService.GetMyInvites(UserLogin);
+                        HHService.currentHH = new();
+                    }
+                    else
+                    {
+                        HHService.currentHH = await HHService.GetHHByUserLogin(UserLogin);
+                    }
+                }
+
+            }
+            catch
             {
                 HHFound = false;
-                myInvites = await InviteService.GetMyInvites(UserLogin);
-                DataService.currentHH = new();
             }
-            else
+            if (!string.IsNullOrEmpty(HHService.currentHH.Password))
             {
-                if (DataService.currentHH == null)
-                {
-                    DataService.currentHH = await HHService.GetHHByUserLogin(UserLogin);
-                }
+                await HHService.SaveToSessionStorage();
             }
+            StateHasChanged();
         }
-        catch
-        {
-            HHFound = false;
-        }
-
     }
     DBHouseHold NewHouseHold = new DBHouseHold();
     DBMember InitialMember = new();
@@ -146,7 +171,7 @@ else
             // newHouseHold = null;
             // Task.Delay(1000);
             // newHouseHold = await HHService.GetHHByID(UserLogin);
-            await HHService.AddHH(DataService.currentHH, UserLogin);
+            await HHService.AddHH(HHService.currentHH, UserLogin);
             HHFound = true;
             navigationManager.NavigateTo(navigationManager.Uri, forceLoad: true);
         }
@@ -170,18 +195,18 @@ else
     {
         //try
         //{
-            newInvite.Id = DataService.currentHH.Login + newInvite.Reciever;
-            newInvite.SenderHH = DataService.currentHH.Login;
-            newInvite.Sender = UserLogin;
-            await InviteService.SendInvite(newInvite);
-            newInvite = new();
-            InviteSent = true;
-            return true;  
+        newInvite.Id = HHService.currentHH.Login + newInvite.Reciever;
+        newInvite.SenderHH = HHService.currentHH.Login;
+        newInvite.Sender = UserLogin;
+        await InviteService.SendInvite(newInvite);
+        newInvite = new();
+        InviteSent = true;
+        return true;  
         //}
         //catch
         //{
-            //InviteSent = false;
-            //return false;
+        //InviteSent = false;
+        //return false;
         //}
 
     }
@@ -238,8 +263,15 @@ else
 
     public void AddNewShop()
     {
-        DataService.currentHH.Shops.Add(newShop);
+        HHService.currentHH.Shops.Add(newShop);
         newShop = "";
         HHService.UpdateHH();
     }
+    private void SetDataAndNavigate(Good good)
+    {
+        HHService.SharedGood = good;
+        HHService.UpdateHH();
+        navigationManager.NavigateTo("/GoodSpace");
+    }
+    
 }

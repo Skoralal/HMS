@@ -4,6 +4,7 @@ using HMS.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace HMS.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240901065431_dbhh")]
+    partial class dbhh
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -168,40 +171,6 @@ namespace HMS.Migrations
                     b.ToTable("DBGoods");
                 });
 
-            modelBuilder.Entity("HMS.Entities.DBHH", b =>
-                {
-                    b.Property<string>("Login")
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<string>("Password")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("SerializedDish")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("SerializedGoods")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("SerializedMember")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("SerializedNormalizedGoods")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Shops")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("Login");
-
-                    b.ToTable("HHs");
-                });
-
             modelBuilder.Entity("HMS.Entities.DBHouseHold", b =>
                 {
                     b.Property<string>("Login")
@@ -233,6 +202,124 @@ namespace HMS.Migrations
                     b.ToTable("DBMembers");
                 });
 
+            modelBuilder.Entity("HMS.Entities.Dish", b =>
+                {
+                    b.Property<string>("ID")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<double>("Amount")
+                        .HasColumnType("float");
+
+                    b.Property<string>("Category")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("Consumed")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("Cooked")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("HHLogin")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("MemberLogin")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Owner")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Recipe")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Time")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("ID");
+
+                    b.HasIndex("HHLogin");
+
+                    b.HasIndex("MemberLogin");
+
+                    b.ToTable("Dish");
+                });
+
+            modelBuilder.Entity("HMS.Entities.Good", b =>
+                {
+                    b.Property<string>("Name")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("DishID")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("HHLogin")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("Icon")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ParentName")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<double>("PassiveConsumption")
+                        .HasColumnType("float");
+
+                    b.Property<string>("Recipe")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<double>("Stock")
+                        .HasColumnType("float");
+
+                    b.HasKey("Name");
+
+                    b.HasIndex("DishID");
+
+                    b.HasIndex("HHLogin");
+
+                    b.HasIndex("ParentName");
+
+                    b.ToTable("Good");
+                });
+
+            modelBuilder.Entity("HMS.Entities.HH", b =>
+                {
+                    b.Property<string>("Login")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("Password")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("SerializedDish")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("SerializedGoods")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("SerializedMember")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Shops")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Login");
+
+                    b.ToTable("HHs");
+                });
+
             modelBuilder.Entity("HMS.Entities.Invite", b =>
                 {
                     b.Property<string>("Id")
@@ -253,6 +340,25 @@ namespace HMS.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Invites");
+                });
+
+            modelBuilder.Entity("HMS.Entities.Member", b =>
+                {
+                    b.Property<string>("Login")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("HHLogin")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Login");
+
+                    b.HasIndex("HHLogin");
+
+                    b.ToTable("Member");
                 });
 
             modelBuilder.Entity("HMS.HMSModels.Good1", b =>
@@ -424,6 +530,41 @@ namespace HMS.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
+            modelBuilder.Entity("HMS.Entities.Dish", b =>
+                {
+                    b.HasOne("HMS.Entities.HH", null)
+                        .WithMany("AllDishes")
+                        .HasForeignKey("HHLogin");
+
+                    b.HasOne("HMS.Entities.Member", null)
+                        .WithMany("Schedule")
+                        .HasForeignKey("MemberLogin");
+                });
+
+            modelBuilder.Entity("HMS.Entities.Good", b =>
+                {
+                    b.HasOne("HMS.Entities.Dish", null)
+                        .WithMany("Contents")
+                        .HasForeignKey("DishID");
+
+                    b.HasOne("HMS.Entities.HH", null)
+                        .WithMany("AllGoods")
+                        .HasForeignKey("HHLogin");
+
+                    b.HasOne("HMS.Entities.Good", "Parent")
+                        .WithMany("Ingredients")
+                        .HasForeignKey("ParentName");
+
+                    b.Navigation("Parent");
+                });
+
+            modelBuilder.Entity("HMS.Entities.Member", b =>
+                {
+                    b.HasOne("HMS.Entities.HH", null)
+                        .WithMany("AllMembers")
+                        .HasForeignKey("HHLogin");
+                });
+
             modelBuilder.Entity("HMS.HMSModels.Good1", b =>
                 {
                     b.HasOne("HMS.HMSModels.Good1", null)
@@ -480,6 +621,30 @@ namespace HMS.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("HMS.Entities.Dish", b =>
+                {
+                    b.Navigation("Contents");
+                });
+
+            modelBuilder.Entity("HMS.Entities.Good", b =>
+                {
+                    b.Navigation("Ingredients");
+                });
+
+            modelBuilder.Entity("HMS.Entities.HH", b =>
+                {
+                    b.Navigation("AllDishes");
+
+                    b.Navigation("AllGoods");
+
+                    b.Navigation("AllMembers");
+                });
+
+            modelBuilder.Entity("HMS.Entities.Member", b =>
+                {
+                    b.Navigation("Schedule");
                 });
 
             modelBuilder.Entity("HMS.HMSModels.Good1", b =>

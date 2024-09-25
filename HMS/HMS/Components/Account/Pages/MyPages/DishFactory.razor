@@ -1,11 +1,12 @@
 ﻿@page "/DishFactory"
-@inject oldIHHService HHService
+@inject InewHHService HHService
 @inject IMemberService MemberService
 @inject IGoodService GoodService
 @inject IDishService DishService
 @inject IInviteService InviteService
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject NavigationManager navigationManager
+@inject IDataService DataService
 @using System.Globalization
 
 @attribute [Authorize]
@@ -14,10 +15,10 @@
 <PageTitle>DishFactory</PageTitle>
 <h3>DishFactory</h3>
 <h1>@Curr</h1>
-<EditForm Model="newDBDish" OnValidSubmit="HandleNewDish">
-    <input @bind-value="newDBDish.Name" placeholder="Name" />
+<EditForm Model="newDish" OnValidSubmit="HandleNewDish">
+    <input @bind-value="newDish.Name" placeholder="Name" />
     <br />
-    <input @bind-value="newDBDish.Category" placeholder="category" list="categories"/>
+    <input @bind-value="newDish.Category" placeholder="category" list="categories"/>
     <br />
     <datalist id="categories">
         @foreach(string cat in categories)
@@ -47,21 +48,30 @@
                 <br />
             </div>
         }
+        <br />
+        <input @bind-value="newDish.Recipe" placeholder="recipe"/>
+
     }
     
     <datalist id="list">
-        @foreach (var ing in allGoods)
+        @foreach (var ing in HHService.currentHH.GoodsDic.Values)
         {
-            <option value="@ing">@ing</option>
+            <option value="@ing.Name">@ing.Name</option>
+        }
+        
+    </datalist>
+    <datalist id="cats">
+        @foreach(string cat in categories)
+        {
+            <option value="@cat">@cat</option>
         }
     </datalist>
-    <button type="submit"></button>
+    <button type="submit">submit</button>
 </EditForm>
 <button onclick="@AddIng">Add ing</button>
 
 @code {
-    DBDish newDBDish = new();
-    List<string> allGoods = new();
+    Dish newDish = new();
     string MemberLogin;
     string HHLogin;
     int Curr = 0;
@@ -74,8 +84,18 @@
         var user = authState.User;
         MemberLogin = user.Identity.Name;
         HHLogin = await MemberService.GetParentHH(MemberLogin);
-        allGoods = await GoodService.GetHHGoodsNames(HHLogin);
-        categories = await DishService.GetHHCategories(HHLogin);
+        categories = HHService.currentHH.DishesDic.Values.Select(e => e.Category).ToHashSet();
+    }
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            // Only load data after the first render, to prevent multiple calls
+            await HHService.LoadDataFromSession();
+
+            // Trigger a re-render if necessary
+            StateHasChanged();
+        }
     }
     public void aboba(int index)
     {
@@ -89,29 +109,23 @@
     }
     public async void HandleNewDish()
     {
-        string DishGoods = "";
         foreach (var Good in DishGoodsList)
         {
             if (Good.Stock > 0)
             {
-                DishGoods += Good.Name;
-                DishGoods += ":";
-                DishGoods += Good.Stock.ToString();
-                DishGoods += ";";
+                newDish.Contents.Add(new Good(HHService.currentHH.NormalizedGoodsDic[Good.Name]));
             }
         }
-        newDBDish.Time = "Template";
-        newDBDish.Good = DishGoods[..(DishGoods.Length-1)];
-        newDBDish.Id = HHLogin + MemberLogin + newDBDish.Time + newDBDish.Name;
-        newDBDish.MemberOwner = MemberLogin;
-        newDBDish.HHOwner = HHLogin;
-        await DishService.AddNewDBDish(newDBDish);
-        newDBDish = new();
-        navigationManager.NavigateTo(navigationManager.Uri, forceLoad: true);
-    }
-    public void DeleteGood(string goodName)
-    {
-        allGoods.Remove(goodName);
+        newDish.Time = "Template";
+        newDish.ID = newDish.Time+newDish.Name;
+        newDish.Owner = MemberLogin;
+        //await DishService.AddNewDBDish(newDish);
+        HHService.currentHH.DishesDic.Add(newDish.ID, newDish);
+        await HHService.UpdateHH();
+        newDish = new();
+        DishGoodsList = [new Good() { Stock = 0, Name = "" }];
+        mappedDishGoods = [0];
+        StateHasChanged();
     }
     public void AddIng()
     {

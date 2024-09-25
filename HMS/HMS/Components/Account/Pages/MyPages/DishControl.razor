@@ -1,12 +1,12 @@
 ﻿@page "/DishControl"
-@inject oldIHHService HHService
 @inject IMemberService MemberService
 @inject IGoodService GoodService
 @inject IDishService DishService
 @inject IInviteService InviteService
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject NavigationManager navigationManager
-@inject DataService DataService
+@inject IDataService DataService
+@inject InewHHService HHService
 
 @attribute [Authorize]
 @rendermode InteractiveServer
@@ -25,9 +25,12 @@
     <div @onclick="() => SetDataAndNavigate(dish)" style="cursor:pointer">
         <label>@Convert.ToDateTime(dish.Time).ToShortTimeString()</label>
         <br />
-        <label>@dish.Good</label>
-        <br />
-        <label>@dish.MemberOwner</label>
+        @foreach(var subGood in dish.Contents)
+        {
+            <label>@subGood.Name</label>
+            <br />
+        }
+        <label>@dish.Owner</label>
     </div>
     <br />
 }
@@ -42,7 +45,7 @@
             UpdateDate();
         }
     }
-    List<DBDish> datesDishes = new();
+    List<Dish> datesDishes = new();
     string MemberLogin = "";
     string HHLogin = "";
     protected override async Task OnInitializedAsync()
@@ -56,8 +59,20 @@
             MemberLogin = user.Identity.Name;
         }
         HHLogin = await MemberService.GetParentHH(MemberLogin);
-        datesDishes = await DishService.GetDateHHDishes(HHLogin, date.ToShortDateString());
-        datesDishes.OrderBy(x => x.Time);
+        
+    }
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            // Only load data after the first render, to prevent multiple calls
+            await HHService.LoadDataFromSession();
+            datesDishes = HHService.currentHH.DishesDic.Where(x => x.Key.StartsWith(date.ToShortDateString()))
+                                .Select(x => x.Value).ToList();
+            datesDishes.OrderBy(x => x.Time);
+            // Trigger a re-render if necessary
+            StateHasChanged();
+        }
     }
     private void GoToCreateNewDish()
     {
@@ -69,11 +84,13 @@
     }
     private async void UpdateDate()
     {
-        datesDishes = await DishService.GetDateHHDishes(HHLogin, date.ToShortDateString());
+        datesDishes = HHService.currentHH.DishesDic.Where(x => x.Key.StartsWith(date.ToShortDateString()))
+                                .Select(x => x.Value).ToList();
+        datesDishes.OrderBy(x => x.Time);
     }
-    private void SetDataAndNavigate(DBDish dish)
+    private void SetDataAndNavigate(Dish dish)
     {
-        DataService.SharedDish = dish;
+        HHService.SharedDish = dish;
         navigationManager.NavigateTo("/DishSpace");
     }
 }

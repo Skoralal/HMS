@@ -10,7 +10,8 @@ namespace HMS.Entities
         public string Name { get; set; } = "";
         public bool Cooked { get; set; } = false;
         public bool Consumed { get; set; } = false ;
-        public List<Good> Contents { get; set; } = new List<Good>();
+        public List<List<Good>> RandomizedContents { get; set; } = new();
+        public List<Good> Contents { get; set; } = new List<Good>();//make this a list of list to choose one good from each
         public string Time { get; set; } = "";
         public string Owner { get; set; } = "";
         public double Amount { get; set; } = 0;

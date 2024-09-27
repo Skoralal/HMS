@@ -12,13 +12,19 @@
 @attribute [Authorize]
 @rendermode @(new InteractiveServerRenderMode(false))
 <PageTitle>GoodSpace</PageTitle>
-<label>@HHService.currentHH.GoodsDic[HHService.SharedGood.Name].Name ---</label>
-<label>@HHService.currentHH.GoodsDic[HHService.SharedGood.Name].Stock</label>
+
+<h1>Aboba</h1>
+@if (HHService.SharedGood.Name != "")
+{
+    <label>@HHService.currentHH.GoodsDic[HHService.SharedGood.Name].Name ---</label>
+    <label>@HHService.currentHH.GoodsDic[HHService.SharedGood.Name].Stock</label>
+}
+
 <br />
 <input @bind-value="amountToConsume" />
 <button @onclick="LocalConsume">Consume</button>
 <br />
-<input @bind-value="amountToCook" />
+<input @onchange="OnAmountToCookChanged" value="@amountToCook" />
 @if (isBought)
 {
     <button @onclick="LocalBuy">Buy</button>
@@ -29,12 +35,34 @@ else
 }
 <br />
 <label>@output</label>
-@foreach(var ess in aboba.Keys)
+<br />
+@if (HHService.SharedGood.Name != "")
 {
-    <div>
-        <h2>@aboba[ess].Name</h2> - <label>@aboba[ess].Stock</label>
-    </div>
+    <label>@HHService.currentHH.GoodsDic[HHService.SharedGood.Name].Category</label>
 }
+<div class="container">
+    <div class="box">
+        @foreach (var ess in aboba.Keys)
+        {
+            <div>
+                <h2>@aboba[ess].Name</h2> - <label>@aboba[ess].Stock</label>
+            </div>
+        }
+    </div>
+    @if (!isBought)
+    {
+        <div class="box">
+            @foreach (string line in cookComponents)
+            {
+                <label>@line</label>
+                <br />
+            }
+        </div>
+    }
+</div>
+
+
+
 @code {
     Dictionary<string, Good> aboba = new();
     List<Good> Essentials = new();
@@ -42,6 +70,7 @@ else
     double amountToCook = 0;
     string output;
     bool isBought = false;
+    List<string> cookComponents = new();
     protected override async Task OnInitializedAsync()
     {
         var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
@@ -85,6 +114,7 @@ else
             {
                 isBought = true;
             }
+            RefreshCookComponents();
             // Trigger a re-render if necessary
             StateHasChanged();
         }
@@ -94,15 +124,37 @@ else
         output = HHService.SharedGood.Consume(amountToConsume, HHService.currentHH.NormalizedGoodsDic);
         HHService.UpdateHH();
     }
+
     private void LocalCook()
     {
         output = HHService.Cook(amountToCook);
+        RefreshCookComponents();
         // output = HHService.SharedGood.Cook(amountToCook, HHService.currentHH.NormalizedGoodsDic);
         HHService.UpdateHH();
+    }
+    private void RefreshCookComponents()
+    {
+        if (isBought)
+        {
+            return;
+        }
+        cookComponents.Clear();
+        foreach(var Ing in HHService.SharedGood.Ingredients)
+        {
+            cookComponents.Add($"{HHService.currentHH.GoodsDic[Ing.Name].Stock}/{amountToCook * HHService.currentHH.NormalizedGoodsDic[HHService.SharedGood.Name].Ingredients.Where(x => x.Name == Ing.Name).First().Stock}   {Ing.Name}");
+        }
     }
     private void LocalBuy()
     {
         output = HHService.Buy(amountToCook);
         HHService.UpdateHH();
+    }
+    private void OnAmountToCookChanged(ChangeEventArgs e)
+    {
+        // Update the bound value
+        amountToCook = int.Parse(e.Value.ToString());
+
+        // Call the RefreshCookComponents method or any other logic
+        RefreshCookComponents();
     }
 }

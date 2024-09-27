@@ -18,6 +18,7 @@
 <EditForm Model="newGood" OnValidSubmit="HandleNewGood">
     <label>Name</label>
     <InputText @bind-Value="@newGood.Name">@newGood.Name</InputText>
+    <InputText @bind-Value="@newGood.Category" list="categories">@newGood.Category</InputText>
     <br />
     @if (GoodIngs != null)
     {
@@ -48,6 +49,12 @@
         @foreach (var shop in HHService.currentHH.Shops)
         {
             <option value="@shop">@shop</option>
+        }
+    </datalist>
+    <datalist id="categories">
+        @foreach(var cat in HHService.currentHH.GoodsDic.Values.Select(x => x.Category).ToList())
+        {
+            <option>@cat</option>
         }
     </datalist>
     <button type="button" class="btn-primary" onclick="@AddIng">Add ingredient</button>

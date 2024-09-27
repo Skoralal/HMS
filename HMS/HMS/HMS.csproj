@@ -8,11 +8,13 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="Components\Account\Pages\MyPages\GoodSpace.razor.css" />
     <None Remove="Components\Account\Pages\MyPages\MyHouseHold.razor.css" />
     <None Remove="KnownIssues.txt" />
   </ItemGroup>
 
   <ItemGroup>
+    <Content Include="Components\Account\Pages\MyPages\GoodSpace.razor.css" />
     <Content Include="Components\Account\Pages\MyPages\MyHouseHold.razor.css" />
     <Content Include="KnownIssues.txt" />
   </ItemGroup>

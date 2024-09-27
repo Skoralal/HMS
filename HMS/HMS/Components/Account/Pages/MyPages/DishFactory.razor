@@ -38,10 +38,10 @@
             //<button @onclick="() => aboba(i)">@i</button>
             //<br />
         //}
+        <label>Contents</label>
         @foreach(int index in mappedDishGoods)
         {
             <div hidden="@(DishGoodsList[index].Stock < 0)">
-            <label>aboba @index @DishGoodsList[index].Stock</label>
             <input @bind-value="@DishGoodsList[index].Name" list="list" @onmouseover="() => hover(index)" />
             <InputNumber @bind-Value="DishGoodsList[index].Stock" />
             <button type="button" @onclick="() => aboba(index)">delete</button>

@@ -17,6 +17,7 @@ namespace HMS.Entities
         public string Icon { get; set; } = "default";
         public string Recipe { get; set; } = "";
         public Good? Parent { get; set; }
+        public string Category { get; set; } = "";
         public Good() 
         { 
             Stock = 0;
@@ -31,6 +32,7 @@ namespace HMS.Entities
             Icon = good.Icon;
             Recipe = good.Recipe;
             Parent = null;
+            Category = good.Category;
         }
         public Good(Good good, Good parent)
         {

@@ -39,16 +39,29 @@
             //<br />
         //}
         <label>Contents</label>
-        @foreach(int index in mappedDishGoods)
-        {
-            <div hidden="@(DishGoodsList[index].Stock < 0)">
-            <input @bind-value="@DishGoodsList[index].Name" list="list" @onmouseover="() => hover(index)" />
-            <InputNumber @bind-Value="DishGoodsList[index].Stock" />
-            <button type="button" @onclick="() => aboba(index)">delete</button>
-                <br />
-            </div>
-        }
         <br />
+        @foreach(var randomGood in RandomizedGoods)
+        {
+            for(int i = 0; i < randomGood.Count;i++)
+            {
+                var Good = randomGood[i];
+                <div hidden="@(Good.Stock < 0)">
+                    <InputText @bind-Value="Good.Name" list="list">@Good.Name</InputText>
+                    <InputNumber @bind-Value="Good.Stock">@Good.Stock</InputNumber>
+                    <button type="button" @onclick="() => Good.Stock = -1">delete</button>
+                    <button type="button" @onclick="() => AddSubstanceGood(randomGood)">add substance</button>
+                    <br />
+                    @if(i != randomGood.Count - 1)
+                    {
+                    <label>OR</label>
+                    }
+                    <br />
+                </div>
+                
+            }
+            <br />
+            <br />
+        }
         <input @bind-value="newDish.Recipe" placeholder="recipe"/>
 
     }
@@ -68,7 +81,7 @@
     </datalist>
     <button type="submit">submit</button>
 </EditForm>
-<button onclick="@AddIng">Add ing</button>
+<button @onclick="() => AddRandomGood()">Add ing</button>
 
 @code {
     Dish newDish = new();
@@ -78,6 +91,7 @@
     HashSet<string> categories = new();
     public List<Good> DishGoodsList = [new Good(){Stock = 0, Name = ""}];
     public List<int> mappedDishGoods = [0];
+    public List<List<Good>> RandomizedGoods = [new List<Good>{new Good()}];
     protected override async Task OnInitializedAsync()
     {
         var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
@@ -109,11 +123,24 @@
     }
     public async void HandleNewDish()
     {
-        foreach (var Good in DishGoodsList)
+        for (int i = 0; i < RandomizedGoods.Count;i++)
         {
-            if (Good.Stock > 0)
+            if(RandomizedGoods[i].Any(x => x.Stock > 0))
             {
-                newDish.Contents.Add(new Good(HHService.currentHH.NormalizedGoodsDic[Good.Name]));
+                newDish.RandomizedContents.Add(new());
+            }
+            else
+            {
+                RandomizedGoods.RemoveAt(i);
+                i--;
+                continue;
+            }
+            foreach (var Good in RandomizedGoods[i])
+            {
+                if (Good.Stock > 0)
+                {
+                    newDish.RandomizedContents[i].Add(new Good(HHService.currentHH.GoodsDic[Good.Name]).Cleansed(Good.Stock, HHService.currentHH.NormalizedGoodsDic));
+                }
             }
         }
         newDish.Time = "Template";
@@ -131,5 +158,13 @@
     {
         DishGoodsList.Add(new Good() { Stock = 0, Name = "" });
         mappedDishGoods.Add(mappedDishGoods[(mappedDishGoods.Count - 1)] + 1);
+    }
+    public void AddRandomGood()
+    {
+        RandomizedGoods.Add(new List<Good> { new Good() });
+    }
+    public void AddSubstanceGood(List<Good> node)
+    {
+        node.Add(new Good());
     }
 }

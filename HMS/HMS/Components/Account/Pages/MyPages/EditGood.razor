@@ -1,4 +1,5 @@
-﻿@page "/NewGood"
+﻿@page "/EditGood"
+
 @using System.Text.Json
 @inject IGoodService GoodService
 @inject IMemberService MemberService
@@ -16,9 +17,7 @@
 <h1>@newGood.Recipe</h1>
 <h1>@HHService.currentHH.GoodsDic.Count</h1>
 <EditForm Model="newGood" OnValidSubmit="HandleNewGood">
-    <label>Name</label>
-    <InputText @bind-Value="@newGood.Name">@newGood.Name</InputText>
-    <InputText @bind-Value="@newGood.Category" list="categories">@newGood.Category</InputText>
+    <label>@newGood.Name --- @newGood.Category</label>
     <br />
     @if (GoodIngs != null)
     {
@@ -37,7 +36,7 @@
     }
     <label>Ingredients</label>
     <br />
-    
+
     <br />
     <datalist id="list">
         @foreach (var ing in HHService.currentHH.GoodsDic.Keys)
@@ -52,7 +51,7 @@
         }
     </datalist>
     <datalist id="categories">
-        @foreach(var cat in HHService.currentHH.GoodsDic.Values.Select(x => x.Category).ToList())
+        @foreach (var cat in HHService.currentHH.GoodsDic.Values.Select(x => x.Category).ToList())
         {
             <option>@cat</option>
         }
@@ -75,14 +74,14 @@
     <br />
     <InputText @bind-Value="@newGood.Icon">@newGood.Icon</InputText>
     <br />
-    
+
 
 
 
     <button type="submit">Submit</button>
 </EditForm>
 <h1>@Debuh</h1>
-@foreach(var aboba in GoodIngs)
+@foreach (var aboba in GoodIngs)
 {
     <h3>@aboba.Name</h3>
 }
@@ -91,7 +90,7 @@
     double Debuh = 1;
     private string UserName;
     public Good newGood = new();
-    public Good newNormalGood = new(){Stock = 1};
+    public Good newNormalGood = new() { Stock = 1 };
     public Good Ingredient = new();
     public string ingName;
     public double ingStock;
@@ -99,7 +98,7 @@
     string HHLogin;
     bool isBought = false;
     List<string> shops = new();
-    List<Good> GoodIngs = [new Good(){Stock = 1}];
+    List<Good> GoodIngs = [new Good() { Stock = 1 }];
     public List<int> mappedGoodIngs = [0];
     protected override async Task OnInitializedAsync()
     {
@@ -109,7 +108,6 @@
         {
             UserName = user.Identity.Name;
         }
-
         newGood.Stock = 0;
         newGood.PassiveConsumption = 0;
     }
@@ -123,6 +121,17 @@
             shops = HHService.currentHH.Shops;
             HHLogin = HHService.currentHH.Login;
             allIngs = HHService.currentHH.GoodsDic.Values.Select(e => new Good(e)).ToList();
+            
+            newGood.Name = HHService.currentHH.NormalizedGoodsDic[HHService.SharedGood.Name].Name;
+            newGood.Category = HHService.currentHH.NormalizedGoodsDic[HHService.SharedGood.Name].Category;
+            newGood.Stock = HHService.currentHH.NormalizedGoodsDic[HHService.SharedGood.Name].Stock;
+            newGood.Icon = HHService.currentHH.NormalizedGoodsDic[HHService.SharedGood.Name].Icon;
+            newGood.Recipe = HHService.currentHH.NormalizedGoodsDic[HHService.SharedGood.Name].Recipe;
+            for (int i = 1; i < HHService.currentHH.NormalizedGoodsDic[HHService.SharedGood.Name].Ingredients.Count; i++)
+            {
+                mappedGoodIngs.Add(i);
+            }
+            GoodIngs = HHService.currentHH.NormalizedGoodsDic[HHService.SharedGood.Name].Ingredients;
             // Trigger a re-render if necessary
             StateHasChanged();
         }
@@ -134,7 +143,7 @@
         foreach (var ing in GoodIngs)
         {
             ing.Parent = newGood;
-            if ((ing.Stock > 0) || (isBought && ing.Stock >=0))
+            if ((ing.Stock > 0) || (isBought && ing.Stock >= 0))
             {
                 if (isBought)
                 {
@@ -143,7 +152,7 @@
                 }
                 else
                 {
-                    if(newGood.Stock > 0)
+                    if (newGood.Stock > 0)
                     {
                         newGood.Ingredients.Add(new Good(HHService.currentHH.NormalizedGoodsDic[ing.Name], newGood).Cleansed(ing.Stock * newGood.Stock, HHService.currentHH.NormalizedGoodsDic));
                     }
@@ -170,7 +179,7 @@
         {
             foreach (var ing in newGood.Ingredients)
             {
-                if (!allIngs.Select(e=>e.Name).Contains(ing.Name))
+                if (!allIngs.Select(e => e.Name).Contains(ing.Name))
                 {
                     return;
                 }
@@ -178,21 +187,24 @@
             //await GoodService.AddHMSGood(newGood, HHLogin);
         }
         //newGood.CascadeUpdateStock();
-        if(newGood.Stock == 0)
+        if (newGood.Stock == 0)
         {
             var mask = new Good(newGood);
             mask.Stock = 1;
             //HHService.currentHH.AddNormalizedGood(mask.Cleansed(1, HHService.currentHH.NormalizedGoodsDic));
             newGood.Stock = 0;
             newGood.CascadeUpdateStock();
-            HHService.currentHH.AddGood(new(newGood));
+            // HHService.currentHH.AddGood(new(newGood));
+            HHService.currentHH.GoodsDic[newGood.Name] = new(newGood);
         }
         else
         {
-            HHService.currentHH.AddGood(new(newGood));
+            HHService.currentHH.GoodsDic[newGood.Name] = new(newGood);
+            // HHService.currentHH.AddGood(new(newGood));
             //HHService.currentHH.AddNormalizedGood(newGood.Cleansed(1, HHService.currentHH.NormalizedGoodsDic));
         }
-        HHService.currentHH.AddNormalizedGood(new(newNormalGood));
+        // HHService.currentHH.AddNormalizedGood(new(newNormalGood));
+        HHService.currentHH.NormalizedGoodsDic[newGood.Name] = new(newNormalGood);
 
         await HHService.UpdateHH();//HERE
                                    //await HHService.SaveToSessionStorage();
@@ -211,7 +223,7 @@
     }
     public void AddNewIngredient()
     {
-        if(newGood.Ingredients == null)
+        if (newGood.Ingredients == null)
         {
             newGood.Ingredients = new();
         }
@@ -226,7 +238,7 @@
     }
     public void AddIng()
     {
-        GoodIngs.Add(new Good() { Stock = 1});
+        GoodIngs.Add(new Good() { Stock = 1 });
         mappedGoodIngs.Add(mappedGoodIngs[(mappedGoodIngs.Count - 1)] + 1);
     }
     public void aboba(int index)

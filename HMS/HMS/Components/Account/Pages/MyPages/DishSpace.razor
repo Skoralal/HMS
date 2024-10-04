@@ -18,12 +18,47 @@
 <h3>DishSpace</h3>
 <h1>@Debug</h1>
 <h1>@HHService.SharedDish.ID</h1>
+<button onclick="@ForceRefresh">Force refresh</button>
+<button onclick="@ToogleTweak">Tweak</button>
+@if(HHService.currentHH.FutureGoodsDic.Count != 0)
+{
+    @for (int i = 0; i < HHService.SharedDish.RandomizedContents.Count; i++)
+    {
+        var good = HHService.SharedDish.Contents[i];
+        if (tweaking)
+        {
+            <label>@i -- @RandomContsntsStrings[i].Count --- @RandomContsntsStrings[i][0]</label> "Works like shit ie does not"
+            <InputSelect TValue="string" @bind-Value="newContents[i]">
+                @foreach (string option in RandomContsntsStrings[i-2])
+                {
+                    <option value="@RandomContsntsStrings[i-1]">@i -- @option</option>
+                }
+            </InputSelect>
+            <br />
+        }
+        else
+        {
+            <div>
+                <label>@good.Name --- @good.Stock / @HHService.currentHH.GoodsDic[good.Name].Stock / @HHService.currentHH.FutureGoodsDic[good.Name].Stock</label>
+            </div>
+        }
+        
+    }
+}
 
+<h1>ABOBA</h1>
+@foreach(var list in HHService.SharedDish.RandomizedContents)
+{
+    foreach(var good in list)
+    {
+        <label>@good.Name === @good.Stock</label>
+        <br />
+    }
+}
 
 @code {
     string MemberLogin = "";
     string HHLogin = "";
-    //List<Good> allGoods = new();// iron ingot has no ings
     Dictionary<string, Good> allGoods = new();
     List<DBGood> allEssential = new();
     List<Good> usedEssential = new();
@@ -31,7 +66,9 @@
     string debug2 = "";
     List<Good> prepDecoGoods = new();
     Dictionary<string, Good> prepGoodsDic = new();
-
+    bool tweaking = false;
+    List<string> newContents = new();
+    List<List<string>> RandomContsntsStrings = new();
     protected override async Task OnInitializedAsync()
     {
         var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
@@ -40,7 +77,7 @@
         {
             MemberLogin = user.Identity.Name;
         }
-        
+
     }
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -48,12 +85,31 @@
         {
             // Only load data after the first render, to prevent multiple calls
             await HHService.LoadDataFromSession();
-
+            for (int i = 0; i < HHService.currentHH.DishesDic[HHService.SharedDish.ID].Contents.Count; i++)
+            {
+                var good = HHService.currentHH.DishesDic[HHService.SharedDish.ID].Contents[i];
+                newContents.Add($"{good.Name} --- {good.Stock}");
+                RandomContsntsStrings.Add(new());
+                foreach (var randomGood in HHService.currentHH.DishesDic[HHService.SharedDish.ID].RandomizedContents[i])
+                {
+                    RandomContsntsStrings[i].Add($"{randomGood.Name} --- {randomGood.Stock}");
+                }
+            }
             // Trigger a re-render if necessary
             StateHasChanged();
         }
     }
-    
+    private void ForceRefresh()
+    {
+        HHService.currentHH.DishesDic[HHService.SharedDish.ID].RefreshGoods(HHService.currentHH, true);
+        HHService.SharedDish = HHService.currentHH.DishesDic[HHService.SharedDish.ID];
+        HHService.UpdateHH();
+    }
+    private void ToogleTweak()
+    {
+        tweaking = !tweaking;
+    }
+
 
     
 }

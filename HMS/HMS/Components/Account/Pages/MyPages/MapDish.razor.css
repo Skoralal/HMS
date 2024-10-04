@@ -1,0 +1,26 @@
+﻿.days-bar {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    border: 2px solid black; /* Outer border for the entire container */
+    padding: 5px;
+    max-width: 350px; /* Set a fixed total width for the entire widget */
+}
+
+button {
+    flex: 1; /* Make the buttons equally spaced */
+    padding: 10px;
+    border: 1px solid black;
+    cursor: pointer;
+    background-color: lightgray;
+    text-transform: lowercase; /* Makes the text lowercase */
+    margin-right: 2px; /* Space between buttons */
+}
+
+    button:last-child {
+        margin-right: 0; /* Remove margin on the last button */
+    }
+
+.active {
+    background-color: lightgreen; /* Active days use light green background */
+}

@@ -69,42 +69,50 @@ namespace HMS.Entities
         }
         public void Cleanse(double stock, Dictionary<string, Good> normals)
         {
-            if (this.Stock == 0)
-            {
-                this.Stock = 1;
-                this.Ingredients = normals[this.Name].Ingredients.Select(x => new Good(x)).ToList();
-            }
-            double margin = Stock;
-            List<Good> Deck = new List<Good>() { this };
-            for (int i = 0; i < Deck.Count; i++)
-            {
-                foreach (var Ingredient in Deck[i].Ingredients)
-                {
-                    Ingredient.Stock /= margin;
-                    Deck.Add(Ingredient);
-                }
-            }
-            Stock = stock;
+            //if (this.Stock == 0)
+            //{
+            //    this.Stock = 1;
+            //    this.Ingredients = normals[this.Name].Ingredients.Select(x => new Good(x)).ToList();
+            //}
+            //double margin = Stock;
+            //List<Good> Deck = new List<Good>() { this };
+            //for (int i = 0; i < Deck.Count; i++)
+            //{
+            //    foreach (var Ingredient in Deck[i].Ingredients)
+            //    {
+            //        Ingredient.Stock /= margin;
+            //        Deck.Add(Ingredient);
+            //    }
+            //}
+            //Stock = stock;
+            //this.CascadeUpdateStock();
+            this.Ingredients = normals[this.Name].Ingredients.Select(x => new Good(x)).ToList();
+            this.Stock = stock;
             this.CascadeUpdateStock();
+            
         }
         public Good Cleansed(double stock, Dictionary<string, Good> normals)
         {
-            if(this.Stock == 0)
-            {
-                this.Stock = 1;
-                this.Ingredients = normals[this.Name].Ingredients.Select(x=> new Good(x)).ToList();
-            }
-            double margin = Stock;
-            List<Good> Deck = new List<Good>() { this };
-            for (int i = 0; i < Deck.Count; i++)
-            {
-                foreach (var Ingredient in Deck[i].Ingredients)
-                {
-                    Ingredient.Stock /= margin;
-                    Deck.Add(Ingredient);
-                }
-            }
-            Stock = stock;
+            //if(this.Stock == 0)
+            //{
+            //    this.Stock = 1;
+            //    this.Ingredients = normals[this.Name].Ingredients.Select(x=> new Good(x)).ToList();
+            //}
+            //double margin = Stock;
+            //List<Good> Deck = new List<Good>() { this };
+            //for (int i = 0; i < Deck.Count; i++)
+            //{
+            //    foreach (var Ingredient in Deck[i].Ingredients)
+            //    {
+            //        Ingredient.Stock /= margin;
+            //        Deck.Add(Ingredient);
+            //    }
+            //}
+            //Stock = stock;
+            //this.CascadeUpdateStock();
+            //return this;
+            this.Ingredients = normals[this.Name].Ingredients.Select(x => new Good(x)).ToList();
+            this.Stock = stock;
             this.CascadeUpdateStock();
             return this;
         }
@@ -133,6 +141,22 @@ namespace HMS.Entities
             this.Cleanse(amount+this.Stock, normals);
             return $"Current stock increased to {this.Stock}";
         }
-        private static double GoodMultiplier { get; set; }
+        public bool CanBeCooked(HH currentHH)
+        {
+            var amount = 0.01;
+            foreach (var ing in Ingredients)
+            {
+                if (currentHH.Shops.Contains(ing.Name))
+                {
+                    return false;
+                }
+                if (currentHH.GoodsDic[ing.Name].Stock - amount * currentHH.NormalizedGoodsDic[Name].Ingredients
+                                        .Where(x => x.Name == ing.Name).First().Stock < 0)
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
     }
 }

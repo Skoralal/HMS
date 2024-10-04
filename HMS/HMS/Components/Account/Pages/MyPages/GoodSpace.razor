@@ -18,6 +18,7 @@
 {
     <label>@HHService.currentHH.GoodsDic[HHService.SharedGood.Name].Name ---</label>
     <label>@HHService.currentHH.GoodsDic[HHService.SharedGood.Name].Stock</label>
+    <button @onclick="()=>GoToEdit()">Edit</button>
 }
 
 <br />
@@ -59,6 +60,12 @@ else
             }
         </div>
     }
+    <div class="box">
+        @foreach (var ing in Cleansed.Ingredients) {
+            <label>@ing.Name --- @ing.Stock</label>
+            <br />
+        }
+    </div>
 </div>
 
 
@@ -71,6 +78,7 @@ else
     string output;
     bool isBought = false;
     List<string> cookComponents = new();
+    Good Cleansed = new();
     protected override async Task OnInitializedAsync()
     {
         var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
@@ -116,12 +124,13 @@ else
             }
             RefreshCookComponents();
             // Trigger a re-render if necessary
+            Cleansed = new(HHService.SharedGood.Cleansed(1, HHService.currentHH.NormalizedGoodsDic));
             StateHasChanged();
         }
     }
     private void LocalConsume()
     {
-        output = HHService.SharedGood.Consume(amountToConsume, HHService.currentHH.NormalizedGoodsDic);
+        output = HHService.currentHH.GoodsDic[HHService.SharedGood.Name].Consume(amountToConsume, HHService.currentHH.NormalizedGoodsDic);
         HHService.UpdateHH();
     }
 
@@ -156,5 +165,9 @@ else
 
         // Call the RefreshCookComponents method or any other logic
         RefreshCookComponents();
+    }
+    private void GoToEdit()
+    {
+        navigationManager.NavigateTo("/EditGood");
     }
 }

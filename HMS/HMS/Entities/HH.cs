@@ -9,9 +9,10 @@ namespace HMS.Entities
     {
         
         //public List<Good> AllGoods { get; set; } = new List<Good>();
-        public List<Dish> AllDishes { get; set; } = new List<Dish>();
+        //public List<Dish> AllDishes { get; set; } = new List<Dish>();
         public List<Member> AllMembers { get; set; } = new List<Member>();
         public Dictionary<string, Good> GoodsDic { get; set; } = new();
+        public Dictionary<string, Good> FutureGoodsDic { get; set; } = new();
         public Dictionary<string, Dish> DishesDic { get; set; } = new();
         public Dictionary<string, Good> NormalizedGoodsDic { get; set; } = new();
         public HH()
@@ -44,12 +45,27 @@ namespace HMS.Entities
         }
         public void AddDish(Dish dish)
         {
-            if (!GoodsDic.ContainsKey(dish.Name))
+            if (!DishesDic.ContainsKey(dish.ID))
             {
                 DishesDic.Add(dish.ID, dish);
-                AllDishes.Add(dish);
             }
             
+        }
+        public void Forecast(DateTime dateTime)
+        {
+            FutureGoodsDic.Clear();
+            foreach (var pair in GoodsDic)
+            {
+                FutureGoodsDic.Add(pair.Key, new(pair.Value));
+            }
+            List<Dish> dishes = DishesDic.Values.Where(x=>x.Time!="Template").Where(x=>Convert.ToDateTime(x.Time) >= DateTime.Today).Where(x => Convert.ToDateTime(x.Time) < dateTime).ToList();
+            foreach (var dish in dishes)
+            {
+                foreach(var good in dish.Contents)
+                {
+                    FutureGoodsDic[good.Name].Stock -= good.Stock;
+                }
+            }
         }
     }
 }

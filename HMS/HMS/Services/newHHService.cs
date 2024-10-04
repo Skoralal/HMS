@@ -87,7 +87,7 @@ namespace HMS.Services
                     List<Dish> Root = JsonSerializer.Deserialize<List<Dish>>(hh!.SerializedDish, options)!;
                     foreach (var dish in Root)
                     {
-                        hh.AddDish(dish);
+                        hh.AddDish(dish);//
                     }
                 }
                 if (hh.SerializedMember.Length > 0)

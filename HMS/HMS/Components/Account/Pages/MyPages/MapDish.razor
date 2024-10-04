@@ -35,16 +35,13 @@
         mapMinute = 59;
     }
     <br />
-    @foreach (int index in templateDishesIndex)
-    {
-        <div hidden="@(IncludedDishes[index].Amount < 0)">
-            <label>aboba @index @IncludedDishes[index].Amount</label>
-            <input @bind-value="@IncludedDishes[index].Name" list="list" />
-            <InputNumber @bind-Value="IncludedDishes[index].Amount" />
-            <button type="button" @onclick="() => aboba1(index)">delete</button>
-            <br />
+    <InputText @bind-Value="mappedDish.Name">@mappedDish.Name</InputText>
+    <br />
+        <div>
+        <label>aboba @choosenDish.Amount</label>
+        <input @bind-value="@choosenDish.Name" list="list" />
+        <InputNumber @bind-Value="choosenDish.Amount" />
         </div>
-    }
     <datalist id="list">
         @foreach (var dish in TemplateDishes)
         {
@@ -52,6 +49,23 @@
         }
     </datalist>
     <br />
+        <div class="days-bar">
+            @foreach (var day in DaysOfWeek)
+            {
+                <div class="day-container">
+                    <button type="button" class="@GetButtonClass(day.Value)" @onclick="() => ToggleDay(day.Key)">
+                        @day.Key
+                    </button>
+                </div>
+            }
+        </div>
+    <br />
+    <InputSelect TValue="string" @bind-Value="setRecurrence">
+        @foreach(string option in recurrenceDic.Keys)
+        {
+            <option value="@option">@option</option>
+        }
+    </InputSelect>
     <button type="submit">submit</button>
 </EditForm>
 <h1>@mappedDBDishDate.ToString()</h1>
@@ -68,7 +82,8 @@
     bool aboba = false;
     List<Dish> TemplateDishes = [new Dish()];
     public List<int> templateDishesIndex = [0];
-    List<Dish> IncludedDishes = [new Dish()];
+    //List<Dish> IncludedDishes = [new Dish()];
+    Dish choosenDish = new();
     protected override async Task OnInitializedAsync()
     {
         var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
@@ -79,7 +94,40 @@
         }
         HHLogin = await MemberService.GetParentHH(UserName);
         HHDishes = await DishService.GetAllHHDishes(HHLogin);
-
+        var today = DateTime.Today.DayOfWeek;
+        string dayString = today switch
+        {
+            DayOfWeek.Monday => "Mon",
+            DayOfWeek.Tuesday => "Tue",
+            DayOfWeek.Wednesday => "Wed",
+            DayOfWeek.Thursday => "Thu",
+            DayOfWeek.Friday => "Fri",
+            DayOfWeek.Saturday => "Sat",
+            DayOfWeek.Sunday => "Sun",
+            _ => "Mon"
+        };
+        // DayNameToNextDate = new Dictionary<string, DateTime>
+        // {
+        //     { "Mon", GetNextWeekday(DayOfWeek.Monday) },
+        //     { "Tue", GetNextWeekday(DayOfWeek.Tuesday) },
+        //     { "Wed", GetNextWeekday(DayOfWeek.Wednesday) },
+        //     { "Thu", GetNextWeekday(DayOfWeek.Thursday) },
+        //     { "Fri", GetNextWeekday(DayOfWeek.Friday) },
+        //     { "Sat", GetNextWeekday(DayOfWeek.Saturday) },
+        //     { "Sun", GetNextWeekday(DayOfWeek.Sunday) }
+        // };
+        DayNameToNextDate = new Dictionary<string, DayOfWeek>
+        {
+            { "Mon", DayOfWeek.Monday },
+            { "Tue", DayOfWeek.Tuesday },
+            { "Wed", DayOfWeek.Wednesday },
+            { "Thu", DayOfWeek.Thursday },
+            { "Fri", DayOfWeek.Friday },
+            { "Sat", DayOfWeek.Saturday },
+            { "Sun", DayOfWeek.Sunday }
+        };
+        // Set today's day to true
+        DaysOfWeek[dayString] = true;
     }
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -98,12 +146,27 @@
         mappedDish.Category = ""; // maybe use for repeat?
         mappedDish.Time = mappedDBDishDate.ToString();
         mappedDish.ID = mappedDish.Time + UserName + mappedDish.Name;
-        for (int i = 0; i < IncludedDishes.Count; i++)
+
+        choosenDish = HHService.currentHH.DishesDic[$"Template{choosenDish.Name}"];
+        mappedDish.RandomizedContents = new(choosenDish.RandomizedContents);//
+        mappedDish.RefreshGoods(HHService.currentHH, firstTime:true);
+        List<Dish> InitialDishes = new();
+        foreach(var isSet in DaysOfWeek)
         {
-            IncludedDishes[i] = HHService.currentHH.DishesDic[$"Template{IncludedDishes[i].Name}"];
+            if (isSet.Value == true)
+            {
+                InitialDishes.Add(new Dish(mappedDish) { Time = (mappedDBDishDate.
+                    AddDays(((int)DayNameToNextDate[isSet.Key] - (int)mappedDBDishDate.DayOfWeek + 7) % 7)).ToString() });
+            }
         }
-        mappedDish.Contents = IncludedDishes.SelectMany(e => e.Contents).ToList();
-        HHService.currentHH.DishesDic.Add(mappedDish.ID, mappedDish);
+        foreach(var dish in InitialDishes)
+        {
+            while (Convert.ToDateTime(dish.Time) < DateTime.Today.AddYears(1)){
+                Dish toAdd = new(dish);
+                HHService.currentHH.DishesDic.Add(toAdd.ID, toAdd);
+                dish.Time = Convert.ToDateTime(dish.Time).AddDays(recurrenceDic[setRecurrence]).ToString();
+            }
+        }
         HHService.UpdateHH();
         mappedDish = new();
         templateDishesIndex = [0];
@@ -115,10 +178,41 @@
         mappedDBDishDate = mappedDBDishDate.AddMinutes(mapMinute - mappedDBDishDate.Minute);
         aboba = true;
     }
-    public void aboba1(int index)
+    public DateTime GetNextWeekday(DayOfWeek desiredDay)
     {
-        //DishGoodsList[index].Name = "aboba";
-        // DishGoodsList[index].PassiveConsumption = index;
-        IncludedDishes[index].Amount = -1;
+        DateTime today = mappedDBDishDate;
+        int daysUntilDesiredDay = ((int)desiredDay - (int)today.DayOfWeek + 7) % 7;
+        return today.AddDays(daysUntilDesiredDay);
+    }
+    private string GetButtonClass(bool isActive)
+    {
+        return isActive ? "active" : string.Empty;
+    }
+    private Dictionary<string, bool> DaysOfWeek = new Dictionary<string, bool>
+    {
+        { "Mon", false },
+        { "Tue", false },
+        { "Wed", false },
+        { "Thu", false },
+        { "Fri", false },
+        { "Sat", false },
+        { "Sun", false }
+    };
+    // private Dictionary<string, DateTime> DayNameToNextDate = new Dictionary<string, DateTime>();
+    private Dictionary<string, DayOfWeek> DayNameToNextDate = new Dictionary<string, DayOfWeek>();
+    private Dictionary<string, double> recurrenceDic = new Dictionary<string, double>
+    {
+        {"one time", 0},
+        {"every week", 7},
+        {"every 2 weeks", 14},
+        {"every 3 weeks", 21},
+        {"every 4 weeks", 28},
+    };
+    private string setRecurrence = "one time";
+
+    // Toggle the boolean value for a given day
+    private void ToggleDay(string day)
+    {
+        DaysOfWeek[day] = !DaysOfWeek[day];
     }
 }
